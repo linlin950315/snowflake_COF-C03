@@ -1,0 +1,3 @@
+S2
+7.multi cluster architecture
+从下到上有三层结构，每层结构的介绍都在后面的8-10里面
