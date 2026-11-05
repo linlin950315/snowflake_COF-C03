@@ -119,6 +119,7 @@ Snowflake 从高到低分三层：
 ### 函数与过程（21～24 讲）
 - [x] **21. User Defined Functions (UDFs)**
 - ⭐⭐⭐ [UDF Overview](https://docs.snowflake.com/en/developer-guide/udf/udf-overview) — SQL / JavaScript / Python / Java / Scala，标量 vs 表函数（UDTF）
+- ⭐⭐⭐ [SQL UDF 介绍](https://docs.snowflake.com/en/developer-guide/udf/sql/udf-sql-introduction) — SQL UDF 引用（reference）的 schema 对象：表（table）、视图（view）、其他函数（other function）
 - 📝 [Q67](题库.md#q67) UDF 可引用的对象（还需 S2-15）
 
 - [ ] **22. Stored Procedures**
@@ -133,6 +134,8 @@ Snowflake 从高到低分三层：
 ### 管道（25～26 讲）
 - [ ] **25. Tasks & Streams**
 - ⭐⭐⭐ [Streams](https://docs.snowflake.com/en/user-guide/streams-intro) — Standard / Append-only / Insert-only
+  - Stream 用来记录对表的增删改
+  - 常见搭配：Stream 加 Task，做定时增量处理
 - ⭐⭐⭐ [Tasks](https://docs.snowflake.com/en/user-guide/tasks-intro) — 定时、DAG、serverless 任务
 - 📝 [Q55](题库.md#q55) Stream 特性/失效
 - 📝 [Q56](题库.md#q56) Insert-only Stream（还需 S2-14）
