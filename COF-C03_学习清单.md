@@ -132,32 +132,51 @@ Snowflake 从高到低分三层：
 - ⭐⭐ [Using Sequences](https://docs.snowflake.com/en/user-guide/querying-sequences) — 不保证无间隙
 
 ### 管道（25～26 讲）
-- [ ] **25. Tasks & Streams**
+- [x] **25. Tasks & Streams**
 - ⭐⭐⭐ [Streams](https://docs.snowflake.com/en/user-guide/streams-intro) — Standard / Append-only / Insert-only
-  - Stream 用来记录对表的增删改
   - 常见搭配：Stream 加 Task，做定时增量处理
+  - Standard Stream 用来记录对表的增删改
+  - Append-only：建在标准表上，只记录新增行，不记录删除
+  - 地理空间数据（geospatial）：Standard stream 取不到变更数据，建议用 append-only stream
+  - Insert-only：建在 external tables、externally managed Iceberg tables 上，只记录新增
 - ⭐⭐⭐ [Tasks](https://docs.snowflake.com/en/user-guide/tasks-intro) — 定时、DAG、serverless 任务
 - 📝 [Q55](题库.md#q55) Stream 特性/失效
 - 📝 [Q56](题库.md#q56) Insert-only Stream（还需 S2-14）
 - 📝 [Q60](题库.md#q60) Stream + Task 定时处理变更
+  - 笔记：Task 通常再加 `WHEN SYSTEM$STREAM_HAS_DATA('stream_name')`，没有新变更时就跳过执行，省 credits。
 - 📝 [Q85](题库.md#q85) SCD Type 2：Stream + Task + MERGE（还需 S8）
 
-- [ ] **26. Dynamic Tables - Hands-on**
+- [x] **26. Dynamic Tables - Hands-on**
 - ⭐⭐⭐ [Dynamic Tables](https://docs.snowflake.com/en/user-guide/dynamic-tables/overview) — target lag、与 Streams+Tasks 对比
+- ⭐⭐⭐ [Refresh modes](https://docs.snowflake.com/en/user-guide/dynamic-tables/refresh-modes) — 全量 vs 增量刷新
+  - 笔记：创建时的几个关键参数
+    - `TARGET_LAG`：数据允许落后源表的最大时长（如 `'1 minute'`、`'1 hour'`），或 `DOWNSTREAM`（由下游依赖它的 DT 的 lag 决定刷新节奏）。
+    - `REFRESH_MODE`：
+      - `AUTO`（默认）：Snowflake 根据查询自动选 INCREMENTAL 或 FULL；不支持增量的查询会退回 FULL。
+      - `INCREMENTAL`：只处理源表变更的部分，**更高效（more efficient）**；查询不支持增量时创建报错。
+      - `FULL`：每次刷新都重新计算整个查询结果。
+    - `INITIALIZE`：首次刷新何时发生。
+      - `ON_CREATE`（默认）：CREATE 语句会**阻塞**，直到初次刷新完成，建好即有数据。
+      - `ON_SCHEDULE`：CREATE 立即返回，表**保持为空**，直到按调度完成第一次刷新。
 - 📝 [Q62](题库.md#q62) Dynamic Table 全量刷新原因
 - 📝 [Q112](题库.md#q112) Dynamic Table
 
 ### 工具与连接（27～30 讲）
-- [ ] **27. SnowSQL - Hands-on**
+- [x] **27. SnowSQL - Hands-on**
 - ⭐⭐ [SnowSQL](https://docs.snowflake.com/en/user-guide/snowsql)
 - ⭐ [Snowflake CLI](https://docs.snowflake.com/en/developer-guide/snowflake-cli/index) — 新一代命令行工具
 - 📝 [Q1](题库.md#q1) Snowflake CLI vs SnowSQL
+  - **SnowSQL**：传统 SQL 客户端，侧重**执行操作**；Q9 用途是**加载和卸载数据**（B）；典型用途：跑 SQL、批量脚本、PUT/GET、COPY 数据加载和卸载；状态：逐步被取代（补充）
+  - **Snowflake CLI（`snow`）**：新一代开发者工具，侧重**管理和部署应用**；Q1 主要用于**管理工作负载和应用**（B）；典型用途：开发和部署 Native Apps、Streamlit、Snowpark、Notebook 等，也可以跑 SQL；状态：官方主推的新工具
 - 📝 [Q3](题库.md#q3) Snowflake CLI 变量模板语法 ⚠️
 - 📝 [Q9](题库.md#q9) SnowSQL 用途
 - 📝 [Q17](题库.md#q17) CLI 连接配置优先级（环境变量 > config.toml）
+  - 优先级从高到低：**命令行参数 command-line arguments（如 `--role`）> 环境变量 environment variables（如 `SNOWFLAKE_ROLE`）> config.toml**
 
-- [ ] **28. IDE Integrations - Visual Studio Code**
+- [x] **28. IDE Integrations - Visual Studio Code**
 - ⭐ [Snowflake Extension for VS Code](https://docs.snowflake.com/en/user-guide/vscode-ext)
+  - `connections.toml` 文件：add and modify connection definitions（添加和修改连接定义）
+  - 别和 Snowflake CLI 的 `config.toml` 混
 - 📝 [Q107](题库.md#q107) VS Code 扩展配置文件
 
 - [ ] **29. Connectors, Drivers & Partnered Tools**
@@ -165,9 +184,6 @@ Snowflake 从高到低分三层：
 - ⭐⭐ [Drivers](https://docs.snowflake.com/en/developer-guide/drivers) — JDBC / ODBC / Python / Node.js / Go / .NET
 - ⭐ [Snowflake Ecosystem（合作伙伴工具）](https://docs.snowflake.com/en/user-guide/ecosystem)
 - ⭐ [Developer](https://docs.snowflake.com/en/developer) — Snowpark、Streamlit、Native Apps
-- 📝 [Q11](题库.md#q11) Streamlit in Snowflake
-- 📝 [Q15](题库.md#q15) Snowpark 支持语言
-- 📝 [Q21](题库.md#q21) 用 Python 连接 Snowflake
 - 📝 [Q44](题库.md#q44) Git 集成需要的对象 ⚠️（还需 S4）
 
 - [ ] **30. Snowflake Scripting**
@@ -182,16 +198,43 @@ Snowflake 从高到低分三层：
 
 ## セクション3: Snowflake AI Data Cloud Features and Architecture (AI Features)
 
-- ⭐⭐⭐ [Snowflake AI & ML](https://docs.snowflake.com/en/guides-overview-ai-features) — Cortex AI Functions（COMPLETE / SUMMARIZE / SENTIMENT / TRANSLATE 等）、Cortex Search、Cortex Analyst、Document AI、ML Functions
+按课程每一讲对应官方文档（32～37 讲）。
+
+### 总览
+- ⭐⭐⭐ [Snowflake AI & ML](https://docs.snowflake.com/en/guides-overview-ai-features) — Cortex AI Functions、Cortex Search、Cortex Analyst、Document AI、ML Functions
 - ⭐ [Snowflake Horizon Catalog](https://docs.snowflake.com/en/user-guide/snowflake-horizon)
 
-### 📝 本章题目（题库）
+### Snowpark 与 Notebooks（32～34 讲）
+- [ ] **32. Introduction to Snowpark**
+- ⭐⭐⭐ [Snowpark API](https://docs.snowflake.com/en/developer-guide/snowpark/index) — 支持 Python / Java / Scala；DataFrame 惰性执行，在 Snowflake 内下推计算
+- 📝 [Q15](题库.md#q15) Snowpark 支持语言（S2-29，学完本讲更稳）
+- 📝 [Q21](题库.md#q21) 用 Python 连接 Snowflake（S2-29，学完本讲更稳）
 
-| 讲次 | 题号 | 知识点 | 还需 |
-|---|---|---|---|
-| S3 | [Q14](题库.md#q14) | ML Functions（Top Insights） |  |
-| S3 | [Q101](题库.md#q101) | Cortex Analyst |  |
-| S3 | [Q102](题库.md#q102) | Snowflake Cortex |  |
+- [ ] **33. Introduction to Snowflake Notebooks [COF-C03]**
+- ⭐⭐⭐ [Snowflake Notebooks](https://docs.snowflake.com/en/user-guide/ui-snowsight/notebooks) — Snowsight 内的 SQL / Python 交互式开发环境
+
+- [ ] **34. Executing SQL and Python Snowpark in Notebooks [COF-C03]**
+- ⭐⭐ [Develop and run code in Snowflake Notebooks](https://docs.snowflake.com/en/user-guide/ui-snowsight/notebooks-develop-run) — SQL 单元格、Python 单元格、Snowpark Session
+
+### Cortex AI（35～36 讲）
+- [ ] **35. Snowflake Cortex: AISQL, Copilot & Document AI [COF-C03]**
+- ⭐⭐⭐ [Cortex AI Functions (AISQL)](https://docs.snowflake.com/en/user-guide/snowflake-cortex/aisql) — COMPLETE / SUMMARIZE / SENTIMENT / TRANSLATE / AI_EXTRACT 等，直接在 SQL 里调 LLM，无需自建模型
+- ⭐⭐ [Snowflake Copilot](https://docs.snowflake.com/en/user-guide/snowflake-copilot) — 自然语言辅助写 SQL
+- ⭐⭐ [Document AI](https://docs.snowflake.com/en/user-guide/snowflake-cortex/document-ai/overview) — 从文档提取结构化信息
+- ⭐⭐ [ML Functions](https://docs.snowflake.com/en/guides-overview-ml-functions) — Forecasting、Anomaly Detection、Top Insights（归到本讲为推测）
+- 📝 [Q14](题库.md#q14) ML Functions（Top Insights）
+- 📝 [Q102](题库.md#q102) Snowflake Cortex
+
+- [ ] **36. Snowflake Cortex: Fine-tuning, Search & Analyst [COF-C03]**
+- ⭐⭐ [Cortex Fine-tuning](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-finetuning) — 用自有数据微调 LLM
+- ⭐⭐⭐ [Cortex Search](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-search/cortex-search-overview) — 非结构化文本的混合（向量 + 关键词）搜索
+- ⭐⭐⭐ [Cortex Analyst](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-analyst) — 业务人员用自然语言问结构化数据，自动生成 SQL
+- 📝 [Q101](题库.md#q101) Cortex Analyst
+
+### Streamlit（37 讲）
+- [ ] **37. Streamlit**
+- ⭐⭐⭐ [Streamlit in Snowflake](https://docs.snowflake.com/en/developer-guide/streamlit/about-streamlit) — 在 Snowflake 内创建和分享数据 / ML 的 Web 应用
+- 📝 [Q11](题库.md#q11) Streamlit in Snowflake（S2-29，学完本讲更稳）
 
 ## セクション4: Account Access & Security
 
