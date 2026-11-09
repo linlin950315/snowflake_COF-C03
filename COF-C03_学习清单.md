@@ -190,7 +190,7 @@ Snowflake 从高到低分三层：
 - ⭐⭐ [Snowflake Scripting](https://docs.snowflake.com/en/developer-guide/snowflake-scripting/index) — BEGIN…END、变量、游标、异常处理
 
 ### 计费（31 讲）
-- [ ] **31. Billing Overview**
+- [x] **31. Billing Overview**
 - ⭐⭐⭐ [Understanding Overall Cost](https://docs.snowflake.com/en/user-guide/cost-understanding-overall) — 计算 / 存储 / 数据传输；Cloud Services 超过当日计算 10% 才收费
 - ⭐⭐ [Cost & Billing](https://docs.snowflake.com/en/guides-overview-cost)
 - 📝 [Q37](题库.md#q37) Budgets（还需 S5）
