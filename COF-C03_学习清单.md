@@ -1,5 +1,25 @@
 # COF-C03 (SnowPro Core) 官方文档学习清单
 
+## 各单元题目占比（题库共 116 题）
+
+统计口径：主要标签和次要标签都算，同一题里同一单元只算一次。19 题涉及多个单元，所以单元出现次数合计 135。
+
+| 单元 | 涉及题数 | 占 116 题比例 | 占 135 次总数比例 |
+|---|---|---|---|
+| S2 | 34 | 29.3% | 25.2% |
+| S6 | 21 | 18.1% | 15.6% |
+| S9 | 20 | 17.2% | 14.8% |
+| S4 | 19 | 16.4% | 14.1% |
+| S7 | 16 | 13.8% | 11.9% |
+| S5 | 14 | 12.1% | 10.4% |
+| S3 | 6 | 5.2% | 4.4% |
+| S8 | 5 | 4.3% | 3.7% |
+
+- 第三列因为有跨单元的题，加起来超过 100%，看"这个单元的知识点会涉及多少题"。
+- 第四列加起来是 100%，看"各单元的相对权重"。
+
+---
+
 按 Udemy 课程章节划分。⭐⭐⭐ 必读 / ⭐⭐ 重点 / ⭐ 补充
 
 > 各章末尾的「本章题目」表来自题目索引（还需 = 做题前要先学的其他章节）。
@@ -29,7 +49,7 @@ Snowflake 从高到低分三层：
 - 📝 [Q2](题库.md#q2) Cloud Services 层职责
 
 - [x] **8. Storage Layer Overview**
-- ⭐⭐⭐ [Micro-partitions & Data Clustering](https://docs.snowflake.com/en/user-guide/tables-micro-partitions) — 列式存储、微分区 50～500MB（未压缩）
+- ⭐⭐⭐ [Micro-partitions & Data Clustering](https://docs.snowflake.com/en/user-guide/tables-clustering-micropartitions) — 列式存储、微分区 50～500MB（未压缩）
 - 📝 [Q91](题库.md#q91) 微分区元数据（还需 S6）
 
 - [x] **9. Query Processing Layer Overview**
@@ -66,9 +86,9 @@ Snowflake 从高到低分三层：
 
 | kind 值 | 类型 | Time Travel | Fail-safe |
 |---|---|---|---|
-| `TABLE` | Permanent（永久表） | 0～90 天 | 7 天 |
-| `TRANSIENT` | Transient（跨会话临时表） | 0～1 天 | 无 |
-| `TEMPORARY` | Temporary（仅当前会话） | 0～1 天 | 无 |
+| `TABLE` | Permanent（永久表） | Standard 0～1 天；Enterprise 起 0～90 天 | 7 天 |
+| `TRANSIENT` | Transient（跨会话临时表） | 0～1 天（默认 1） | 无 |
+| `TEMPORARY` | Temporary（仅当前会话） | 0～1 天（默认 1） | 无 |
 
 注意：Permanent 的 kind 值是 `TABLE` 而不是 `PERMANENT`。原因是 Permanent 是 Snowflake 最初唯一的表类型，就叫"TABLE"；Transient / Temporary 是后来加的特殊变体，才有了自己的名字。`CREATE TABLE` 不写修饰词默认就是 Permanent，`kind` 列也同理显示 `TABLE`。
 
@@ -85,7 +105,7 @@ Snowflake 从高到低分三层：
 
 - [x] **16. Update: Worksheets vs. Workspaces**
 - ⭐⭐ [Snowsight](https://docs.snowflake.com/en/user-guide/ui-snowsight)
-- ⭐ [Worksheets](https://docs.snowflake.com/en/user-guide/ui-snowsight-worksheets) — 计划弃用
+- ⭐ [Worksheets](https://docs.snowflake.com/en/user-guide/ui-snowsight-worksheets) — 官网：Legacy Worksheets 计划于 2026-06-22 从 Snowsight 移除，由 Workspaces 取代
 - ⭐ [Workspaces](https://docs.snowflake.com/en/user-guide/ui-snowsight/workspaces)
 - 📝 [Q7](题库.md#q7) 可写入 Git 仓库的功能（还需 S2-29）
 
@@ -112,7 +132,7 @@ Snowflake 从高到低分三层：
 - 📝 [Q12](题库.md#q12) Open Catalog 与 Iceberg
 
 - [x] **19. Parameters ／ 20. Parameters Hands-on**
-- ⭐⭐⭐ [Parameters](https://docs.snowflake.com/en/sql-reference/parameters) — Account / Session / Object 三类，层级覆盖关系（覆盖规则：越靠近使用者优先级越高，即 Account → User → Session → Object，后者覆盖前者）
+- ⭐⭐⭐ [Parameters](https://docs.snowflake.com/en/sql-reference/parameters) — Account / Session / Object 三类，可在不同层级设置并逐级覆盖：Session 参数 Account → User → Session（后者覆盖前者）；Object 参数 Account → 对象（database / schema / table 等，下层对象覆盖上层）。Object 并不排在 Session 之后
 - ⭐ [SHOW PARAMETERS](https://docs.snowflake.com/en/sql-reference/sql/show-parameters)
 - 📝 [Q16](题库.md#q16) DATA_RETENTION 参数层级继承（还需 S9）
 
@@ -136,9 +156,9 @@ Snowflake 从高到低分三层：
 - ⭐⭐⭐ [Streams](https://docs.snowflake.com/en/user-guide/streams-intro) — Standard / Append-only / Insert-only
   - 常见搭配：Stream 加 Task，做定时增量处理
   - Standard Stream 用来记录对表的增删改
-  - Append-only：建在标准表上，只记录新增行，不记录删除
+  - Append-only：可建在标准表、(dynamic table、Snowflake 管理的 Iceberg 表、视图上)只记录新增行
   - 地理空间数据（geospatial）：Standard stream 取不到变更数据，建议用 append-only stream
-  - Insert-only：建在 external tables、externally managed Iceberg tables 上，只记录新增
+  - Insert-only：，只记录新增。建在 external tables、externally managed Iceberg tables（及无分区列的 Delta Direct 表）上
 - ⭐⭐⭐ [Tasks](https://docs.snowflake.com/en/user-guide/tasks-intro) — 定时、DAG、serverless 任务
 - 📝 [Q55](题库.md#q55) Stream 特性/失效
 - 📝 [Q56](题库.md#q56) Insert-only Stream（还需 S2-14）
@@ -151,8 +171,8 @@ Snowflake 从高到低分三层：
 - ⭐⭐⭐ [Refresh modes](https://docs.snowflake.com/en/user-guide/dynamic-tables/refresh-modes) — 全量 vs 增量刷新
   - 笔记：创建时的几个关键参数
     - `TARGET_LAG`：数据允许落后源表的最大时长（如 `'1 minute'`、`'1 hour'`），或 `DOWNSTREAM`（由下游依赖它的 DT 的 lag 决定刷新节奏）。
-    - `REFRESH_MODE`：
-      - `AUTO`（默认）：Snowflake 根据查询自动选 INCREMENTAL 或 FULL；不支持增量的查询会退回 FULL。
+    - `REFRESH_MODE`（官网现有 AUTO / FULL / INCREMENTAL / ADAPTIVE / CUSTOM_INCREMENTAL；ADAPTIVE 默认增量，成本过高时自动重建）：
+      - `AUTO`（默认）：创建时 Snowflake 评估一次，选定 INCREMENTAL 或 FULL，之后锁定不再变化；不支持增量的查询会选 FULL。
       - `INCREMENTAL`：只处理源表变更的部分，**更高效（more efficient）**；查询不支持增量时创建报错。
       - `FULL`：每次刷新都重新计算整个查询结果。
     - `INITIALIZE`：首次刷新何时发生。
@@ -172,6 +192,7 @@ Snowflake 从高到低分三层：
 - 📝 [Q9](题库.md#q9) SnowSQL 用途
 - 📝 [Q17](题库.md#q17) CLI 连接配置优先级（环境变量 > config.toml）
   - 优先级从高到低：**命令行参数 command-line arguments（如 `--role`）> 环境变量 environment variables（如 `SNOWFLAKE_ROLE`）> config.toml**
+  - 官网补充（Snowflake CLI 的 Managing connections 页）：① 命令行参数 > ② 覆盖特定 config.toml 参数的环境变量（形如 `SNOWFLAKE_CONNECTIONS_<NAME>_PASSWORD`）> ③ config.toml / connections.toml 中的连接 > ④ 通用环境变量（如 `SNOWFLAKE_USER`）。即只有 ② 高于 config.toml，通用环境变量反而低于它；做题以上面的「环境变量 > config.toml」为准
 
 - [x] **28. IDE Integrations - Visual Studio Code**
 - ⭐ [Snowflake Extension for VS Code](https://docs.snowflake.com/en/user-guide/vscode-ext)
@@ -205,7 +226,7 @@ Snowflake 从高到低分三层：
 - ⭐ [Snowflake Horizon Catalog](https://docs.snowflake.com/en/user-guide/snowflake-horizon)
 
 ### Snowpark 与 Notebooks（32～34 讲）
-- [ ] **32. Introduction to Snowpark**
+- [x] **32. Introduction to Snowpark**
 - ⭐⭐⭐ [Snowpark API](https://docs.snowflake.com/en/developer-guide/snowpark/index) — 支持 Python / Java / Scala；DataFrame 惰性执行，在 Snowflake 内下推计算
 - 📝 [Q15](题库.md#q15) Snowpark 支持语言（S2-29，学完本讲更稳）
 - 📝 [Q21](题库.md#q21) 用 Python 连接 Snowflake（S2-29，学完本讲更稳）
@@ -218,17 +239,17 @@ Snowflake 从高到低分三层：
 
 ### Cortex AI（35～36 讲）
 - [ ] **35. Snowflake Cortex: AISQL, Copilot & Document AI [COF-C03]**
-- ⭐⭐⭐ [Cortex AI Functions (AISQL)](https://docs.snowflake.com/en/user-guide/snowflake-cortex/aisql) — COMPLETE / SUMMARIZE / SENTIMENT / TRANSLATE / AI_EXTRACT 等，直接在 SQL 里调 LLM，无需自建模型
+- ⭐⭐⭐ [Cortex AI Functions (AISQL)](https://docs.snowflake.com/en/user-guide/snowflake-cortex/aisql) — 官网现用 AI_ 前缀：AI_COMPLETE / AI_SUMMARIZE / AI_SENTIMENT / AI_TRANSLATE / AI_EXTRACT / AI_CLASSIFY / AI_FILTER 等（旧名 COMPLETE、SUMMARIZE 等是 SNOWFLAKE.CORTEX.* 旧函数，考试可能用旧名），直接在 SQL 里调 LLM，无需自建模型
 - ⭐⭐ [Snowflake Copilot](https://docs.snowflake.com/en/user-guide/snowflake-copilot) — 自然语言辅助写 SQL
-- ⭐⭐ [Document AI](https://docs.snowflake.com/en/user-guide/snowflake-cortex/document-ai/overview) — 从文档提取结构化信息
+- ⭐⭐ [Document AI](https://docs.snowflake.com/en/user-guide/snowflake-cortex/document-ai/overview) — 从文档提取结构化信息（此链接现重定向到 Cortex AI Documents 页，官网主推 AI_EXTRACT 提取文档信息）
 - ⭐⭐ [ML Functions](https://docs.snowflake.com/en/guides-overview-ml-functions) — Forecasting、Anomaly Detection、Top Insights（归到本讲为推测）
 - 📝 [Q14](题库.md#q14) ML Functions（Top Insights）
 - 📝 [Q102](题库.md#q102) Snowflake Cortex
 
 - [ ] **36. Snowflake Cortex: Fine-tuning, Search & Analyst [COF-C03]**
 - ⭐⭐ [Cortex Fine-tuning](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-finetuning) — 用自有数据微调 LLM
-- ⭐⭐⭐ [Cortex Search](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-search/cortex-search-overview) — 非结构化文本的混合（向量 + 关键词）搜索
-- ⭐⭐⭐ [Cortex Analyst](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-analyst) — 业务人员用自然语言问结构化数据，自动生成 SQL
+- ⭐⭐⭐ [Cortex Search](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-search/cortex-search-overview) — 非结构化文本的混合（向量 + 关键词）RAG搜索
+- ⭐⭐⭐ [Cortex Analyst](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-analyst) — 业务人员用自然语言问结构化数据，自动生成 SQL（依赖语义模型/semantic view；官网页首提示建议迁移到 Cortex Agents）
 - 📝 [Q101](题库.md#q101) Cortex Analyst
 
 ### Streamlit（37 讲）
@@ -238,41 +259,106 @@ Snowflake 从高到低分三层：
 
 ## セクション4: Account Access & Security
 
-- ⭐⭐⭐ [Access Control](https://docs.snowflake.com/en/user-guide/security-access-control-overview) — RBAC / DAC、系统角色、角色继承
-- ⭐⭐⭐ [Authentication](https://docs.snowflake.com/en/user-guide/admin-security-fed-auth-overview) — MFA、SSO、Key-pair、OAuth
-- ⭐⭐ [Network Policies](https://docs.snowflake.com/en/user-guide/network-policies)
-- ⭐⭐ [End-to-end Encryption](https://docs.snowflake.com/en/user-guide/security-encryption-end-to-end)
-- ⭐⭐ [Encryption Key Management](https://docs.snowflake.com/en/user-guide/security-encryption-manage) — Tri-Secret Secure、密钥轮换
-- ⭐⭐ [Column-level Security](https://docs.snowflake.com/en/user-guide/security-column-intro) — Masking Policy
-- ⭐⭐ [Row Access Policies](https://docs.snowflake.com/en/user-guide/security-row-intro)
-- ⭐⭐ [Object Tagging](https://docs.snowflake.com/en/user-guide/object-tagging)
-- ⭐⭐ [Classification](https://docs.snowflake.com/en/user-guide/governance-classify-concepts)
-- ⭐ [Access History](https://docs.snowflake.com/en/user-guide/access-history)
-- ⭐ [Aggregation Policies](https://docs.snowflake.com/en/user-guide/aggregation-policies)
-- ⭐ [Projection Policies](https://docs.snowflake.com/en/user-guide/projection-policies)
+按课程每一讲对应官方文档（截图显示本章 22 讲约 1 小时 55 分，我只看到 38～58 共 21 讲，第 59 讲未见，需补）。题目按讲次归属为推测，以题库内容为准。
 
-### 📝 本章题目（题库）
+### 访问控制（38～43 讲）
+- [ ] **38. Account Access & Security Introduction**（章节介绍，无需文档）
 
-| 讲次 | 题号 | 知识点 | 还需 |
-|---|---|---|---|
-| S4 | [Q22](题库.md#q22) | ACCESS_HISTORY 影响分析 |  |
-| S4 | [Q23](题库.md#q23) | Object Tagging 识别敏感数据 |  |
-| S4 | [Q24](题库.md#q24) | Tri-Secret Secure | S2-11 |
-| S4 | [Q25](题库.md#q25) | 列级血缘 ACCESS_HISTORY |  |
-| S4 | [Q27](题库.md#q27) | Row Access Policy |  |
-| S4 | [Q28](题库.md#q28) | Secondary Roles |  |
-| S4 | [Q29](题库.md#q29) | 审计敏感数据访问 ⚠️ |  |
-| S4 | [Q30](题库.md#q30) | Managed Access Schema |  |
-| S4 | [Q31](题库.md#q31) | Masking Policy |  |
-| S4 | [Q32](题库.md#q32) | MFA 第二因子方式 |  |
-| S4 | [Q33](题库.md#q33) | SYSADMIN 权限范围 | S5 |
-| S4 | [Q34](题库.md#q34) | Network Rules / Network Policies |  |
-| S4 | [Q35](题库.md#q35) | IS_ROLE_IN_SESSION |  |
-| S4 | [Q39](题库.md#q39) | Future Grants |  |
-| S4 | [Q40](题库.md#q40) | Key-pair 密钥轮换 |  |
-| S4 | [Q105](题库.md#q105) | Masking Policy + 角色继承 ⚠️ |  |
-| S4 | [Q106](题库.md#q106) | 私钥加密 |  |
-| S4 | [Q108](题库.md#q108) | 服务账号用 Key-pair |  |
+- [ ] **39. Access Control Overview**
+- ⭐⭐⭐ [Access Control Overview](https://docs.snowflake.com/en/user-guide/security-access-control-overview) — RBAC / DAC、securable object、owner、角色继承
+- ⭐⭐ [Managed Access Schema](https://docs.snowflake.com/en/user-guide/security-access-control-configure#creating-managed-access-schemas) — 只有 schema owner / MANAGE GRANTS 能授权
+- 📝 [Q30](题库.md#q30) Managed Access Schema
+
+- [ ] **40. Roles**
+- ⭐⭐⭐ [System-defined roles](https://docs.snowflake.com/en/user-guide/security-access-control-overview#system-defined-roles) — ORGADMIN / ACCOUNTADMIN / SECURITYADMIN / USERADMIN / SYSADMIN / PUBLIC
+- ⭐⭐ [Role hierarchy and privilege inheritance](https://docs.snowflake.com/en/user-guide/security-access-control-overview#role-hierarchy-and-privilege-inheritance)
+- ⭐⭐ [Secondary roles (USE SECONDARY ROLES)](https://docs.snowflake.com/en/sql-reference/sql/use-secondary-roles)
+- ⭐ [IS_ROLE_IN_SESSION](https://docs.snowflake.com/en/sql-reference/functions/is_role_in_session)
+- 📝 [Q28](题库.md#q28) Secondary Roles
+- 📝 [Q35](题库.md#q35) IS_ROLE_IN_SESSION
+- 📝 [Q33](题库.md#q33) SYSADMIN 权限范围（还需 S5）
+
+- [ ] **41. Role Types: Database Roles [COF-C03]**
+- ⭐⭐⭐ [Database roles](https://docs.snowflake.com/en/user-guide/security-access-control-overview#database-roles-and-role-hierarchies) — 限定在某个 database 内；用于 Data Sharing 授权；不能在会话中直接激活，需授给账号角色（账号角色不能授给 database role）；可授给 share 或其他 database role
+- ⭐ [Account roles / Instance roles / Application roles](https://docs.snowflake.com/en/user-guide/security-access-control-overview#label-access-control-overview-role-types) — 其他角色类型
+
+- [ ] **42. Privileges**
+- ⭐⭐⭐ [Access control privileges](https://docs.snowflake.com/en/user-guide/security-access-control-privileges) — USAGE / SELECT / OWNERSHIP / MANAGE GRANTS 等
+- ⭐⭐ [Future Grants](https://docs.snowflake.com/en/user-guide/security-access-control-configure#defining-future-grants-on-database-or-schema-objects) — 对未来创建的对象预先授权
+- 📝 [Q39](题库.md#q39) Future Grants
+
+- [ ] **43. Access Control - Hands-on**（实操：创建角色、授权、继承；复习 39～42 讲文档即可）
+
+### 用户认证（44～48 讲）
+- [ ] **44. User Authentication**
+- ⭐⭐⭐ [Authentication policies](https://docs.snowflake.com/en/user-guide/authentication-policies) — 限制认证方式、客户端类型、MFA 要求
+- ⭐⭐ [Authentication overview](https://docs.snowflake.com/en/user-guide/admin-security-fed-auth-overview)
+
+- [ ] **45. Multi-factor Authentication (MFA)**
+- ⭐⭐⭐ [MFA](https://docs.snowflake.com/en/user-guide/security-mfa) — 第二因子方式：Passkey（官方推荐）、Authenticator App（TOTP）、Duo；用户自行注册，管理员可用 Authentication Policy 限制允许的方式、强制注册；不支持邮件验证码/安全问题/社交登录
+- 📝 [Q32](题库.md#q32) MFA 第二因子方式
+
+- [ ] **46. Multi-factor Authentication (MFA) - Hands-on**（实操；MFA 文档同上，不用另读）
+
+- [ ] **47. Federated Authentication**
+- ⭐⭐⭐ [Federated authentication & SSO](https://docs.snowflake.com/en/user-guide/admin-security-fed-auth-overview) — IdP + Snowflake 作为 SP；支持 SAML 2.0 和 OpenID Connect（OIDC）；部分厂商（如 Okta、ADFS）有原生支持
+- ⭐ [Configuring Snowflake to use federated authentication](https://docs.snowflake.com/en/user-guide/admin-security-fed-auth-use)
+
+- [ ] **48. Key Pair Authentication, OAuth & SCIM**
+- ⭐⭐⭐ [Key-pair authentication](https://docs.snowflake.com/en/user-guide/key-pair-auth) — RSA_PUBLIC_KEY / RSA_PUBLIC_KEY_2 轮换；私钥可加密；适合服务账号
+- ⭐⭐ [OAuth](https://docs.snowflake.com/en/user-guide/oauth) — Snowflake OAuth / External OAuth
+- ⭐⭐ [SCIM](https://docs.snowflake.com/en/user-guide/scim-intro) — 自动同步用户和角色（Okta / Azure AD）
+- 📝 [Q40](题库.md#q40) Key-pair 密钥轮换
+- 📝 [Q106](题库.md#q106) 私钥加密
+- 📝 [Q108](题库.md#q108) 服务账号用 Key-pair
+
+### 网络与加密（49～50 讲）
+- [ ] **49. Network Policies**
+- ⭐⭐⭐ [Network policies](https://docs.snowflake.com/en/user-guide/network-policies) — 控制谁能访问 Snowflake 服务和 internal stage；allowed 列表 / blocked 列表，同一地址两边都有时 blocked 优先；可应用到账号、security integration、用户，越具体的优先（用户 > integration > 账号）；新策略应使用 network rule，而非旧的 ALLOWED_IP_LIST
+- ⭐⭐ [Network rules](https://docs.snowflake.com/en/user-guide/network-rules) — 把相关网络标识（IPv4/IPv6、AWS VPCE 等）分组，加入 network policy 的 allowed/blocked 列表（也用于出站网络访问）
+- 📝 [Q34](题库.md#q34) Network Rules / Network Policies
+
+- [ ] **50. Data Encryption**（已勾选）
+- ⭐⭐⭐ [End-to-end encryption](https://docs.snowflake.com/en/user-guide/security-encryption-end-to-end) — 数据存储和传输全程加密（AES-256）
+- ⭐⭐⭐ [Encryption key management](https://docs.snowflake.com/en/user-guide/security-encryption-manage) — 分层密钥、密钥超过 30 天自动轮换（rotation）；Enterprise 起可开启 periodic rekeying（退役密钥超过 1 年后重新加密数据）、Tri-Secret Secure（客户管理密钥 + Snowflake 密钥，需 Business Critical）
+- 📝 [Q24](题库.md#q24) Tri-Secret Secure（还需 S2-11）
+
+### 数据治理与访问控制（51～54 讲）
+- [ ] **51. Column Level Security**
+- ⭐⭐⭐ [Dynamic Data Masking / Masking policies](https://docs.snowflake.com/en/user-guide/security-column-intro) — 查询时按角色脱敏（数据本身不变）；External Tokenization；需 Enterprise 及以上
+- 📝 [Q31](题库.md#q31) Masking Policy
+- 📝 [Q105](题库.md#q105) Masking Policy + 角色继承 ⚠️（还需 40 讲角色继承）
+
+- [ ] **52. Row Level Security**
+- ⭐⭐⭐ [Row access policies](https://docs.snowflake.com/en/user-guide/security-row-intro) — 按角色/映射表决定能看到哪些行；需 Enterprise 及以上
+- 📝 [Q27](题库.md#q27) Row Access Policy
+
+- [ ] **53. Column and Row Level Security - Hands-on**（实操；文档同 51、52 讲）
+
+- [ ] **54. Secure Views**
+- ⭐⭐⭐ [Secure views](https://docs.snowflake.com/en/user-guide/views-secure) — 隐藏视图定义（仅 owner 角色可见），防止优化器泄露数据（代价是性能略低）；Data Sharing 必须用 secure view
+
+### 监控与血缘（55～58 讲）
+- [ ] **55. Account Usage & Information Schema**
+- ⭐⭐⭐ [Account Usage](https://docs.snowflake.com/en/sql-reference/account-usage) — SNOWFLAKE 共享库；有延迟（最长约 3 小时），保留 365 天
+- ⭐⭐⭐ [Information Schema](https://docs.snowflake.com/en/sql-reference/info-schema) — 每个库自带；实时，保留较短（约 7 天～6 个月，视视图而定）
+- ⭐⭐ [Access History](https://docs.snowflake.com/en/user-guide/access-history) — 记录谁读/写了哪些列，在 ACCOUNT_USAGE 的 ACCESS_HISTORY 视图；延迟约 3 小时，保留 1 年；Enterprise 及以上
+- 📝 [Q22](题库.md#q22) ACCESS_HISTORY 影响分析（58 讲血缘也相关）
+
+- [ ] **56. Object Tagging Hands-on**
+- ⭐⭐⭐ [Object tagging](https://docs.snowflake.com/en/user-guide/object-tagging) — 标签继承（上层对象的标签自动继承给下层，如表→列）；创建/设置标签所有版本可用，tag-based masking 等进阶功能需 Enterprise 及以上
+- ⭐⭐ [Classification](https://docs.snowflake.com/en/user-guide/governance-classify-concepts) — 自动识别敏感列
+- 📝 [Q23](题库.md#q23) Object Tagging 识别敏感数据
+- 📝 [Q29](题库.md#q29) 审计敏感数据访问 ⚠️（答案 D=Object tagging；与 51 讲 tag-based masking 相关）
+
+- [ ] **57. Alerts & Notifications [COF-C03]**
+- ⭐⭐⭐ [Alerts](https://docs.snowflake.com/en/user-guide/alerts) — 按计划检查条件，满足时触发动作；使用 serverless 或指定 warehouse；创建后默认挂起，需 ALTER ALERT ... RESUME
+- ⭐⭐ [Notifications / Notification integrations](https://docs.snowflake.com/en/user-guide/notifications/about-notifications) — 可发到云厂商队列（SNS / Pub/Sub / Event Grid）、邮件、Webhook；邮件用 SYSTEM$SEND_EMAIL，其他用 SYSTEM$SEND_SNOWFLAKE_NOTIFICATION
+
+- [ ] **58. Data Lineage - Hands-on [COF-C03]**
+- ⭐⭐⭐ [Data lineage](https://docs.snowflake.com/en/user-guide/ui-snowsight-lineage) — Snowsight 中查看上下游（upstream/downstream）依赖，含列级血缘（Column lineage）；需 Enterprise 及以上
+- 📝 [Q25](题库.md#q25) 列级血缘 ACCESS_HISTORY（答案 ACCESS_HISTORY，55 讲已讲过）
+- ⭐ [Aggregation Policies](https://docs.snowflake.com/en/user-guide/aggregation-policies) / [Projection Policies](https://docs.snowflake.com/en/user-guide/projection-policies) — 课程未单列，了解即可
 
 ## セクション5: Performance Concepts: Virtual Warehouses
 
@@ -300,7 +386,7 @@ Snowflake 从高到低分三层：
 ## セクション6: Performance Concepts: Query Optimisation
 
 - ⭐⭐⭐ [Performance Optimization 总览](https://docs.snowflake.com/en/guides-overview-performance)
-- ⭐⭐⭐ [Micro-partitions & Data Clustering](https://docs.snowflake.com/en/user-guide/tables-micro-partitions) — Pruning、clustering depth
+- ⭐⭐⭐ [Micro-partitions & Data Clustering](https://docs.snowflake.com/en/user-guide/tables-clustering-micropartitions) — Pruning、clustering depth
 - ⭐⭐⭐ [Query Profile](https://docs.snowflake.com/en/user-guide/ui-query-profile) — Spilling、Exploding joins
 - ⭐⭐⭐ [Persisted Query Results](https://docs.snowflake.com/en/user-guide/querying-persisted-results) — 结果缓存 24 小时
 - ⭐⭐ [Clustering Keys](https://docs.snowflake.com/en/user-guide/tables-clustering-keys)
