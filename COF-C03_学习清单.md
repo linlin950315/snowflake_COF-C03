@@ -221,6 +221,31 @@ Snowflake 从高到低分三层：
 
 按课程每一讲对应官方文档（32～37 讲）。
 
+### 📌 一句话定义速记（依据官方文档，2026-11 核对）
+
+| 功能 | 一句话定义 | 文档里的关键事实 / 注意 |
+|---|---|---|
+| **Snowpark** | 在 Snowflake 内大规模查询和处理数据的库（DataFrame API） | 支持 **Java、Python、Scala** 三种语言；计算全在 Snowflake 内完成，无需另建集群；惰性执行，调用 `collect()` 等 action 时才发送 SQL |
+| **Snowflake Notebooks** | Snowsight 里统一的开发界面，单元格式环境，可写 Python、SQL、Markdown | 单元格类型：SQL / Python / Markdown；SQL 和 Snowpark 查询始终在 warehouse 上运行；⚠️ 文档已把原版改名 **Legacy Notebooks**，新一代是 Notebooks in Workspaces |
+| **Streamlit in Snowflake** | 帮开发者在 Snowflake 上安全地构建、部署、分享 Streamlit 应用 | Streamlit 本身是开源 Python 库；底层计算和存储由 Snowflake 管理；代码存在 Snowflake 对象里，用 RBAC 控制访问 |
+| **Cortex AI Functions (AISQL)** | 用 SQL（也可用 Python）直接调用 LLM，对文本和图片做非结构化分析 | 需要 `USE AI FUNCTIONS` 权限 + `CORTEX_USER` 或 `AI_FUNCTIONS_USER` 数据库角色；为吞吐量优化，适合批处理；旧的 `SNOWFLAKE.CORTEX.*` 函数是旧名 |
+| **Snowflake Copilot** | 由 LLM 驱动的助手，简化数据分析并保持数据治理 | 看不到表里的数据，只看元数据；不支持跨数据库或跨 schema 查询；权限靠 `COPILOT_USER` 角色（默认授予 PUBLIC）；⚠️ 文档顶部提示它**正被 Cortex Code 取代** |
+| **Document AI / Cortex AI Functions: Documents** | 以 Cortex AI 函数形式提供的文档智能：解析文档、提取结构化信息、分类文档 | 核心函数：`AI_PARSE_DOCUMENT`（解析，保留版面）、`AI_EXTRACT`（按 schema 提取）、`AI_CLASSIFY`（分类）；原 Document AI 链接现在指向这一页 |
+| **ML Functions** | 用机器学习给数据提供自动预测和洞察，无需 ML 专业知识 | 文档列出四个：**Forecasting**（预测时间序列未来值）、**Anomaly Detection**（标出异常值）、**Classification**（把行分到两个或多个类别）、**Top Insights**（找出对指标有意外影响的维度和值）；训练出的模型实例会产生存储费用 |
+| **Cortex Fine-tuning** | 用自有数据定制大语言模型，针对特定任务 | 全托管，用 PEFT（参数高效微调）；训练数据需有 `prompt` 和 `completion` 两列；⚠️ 文档写明**计划 2027 年 Q1 弃用**，改用 Cortex Training |
+| **Cortex Search** | 对 Snowflake 数据做低延迟、高质量的"模糊"搜索 | 混合搜索：向量搜索 + 关键词搜索 + 语义重排；用 `CREATE CORTEX SEARCH SERVICE` 创建；常用于 RAG |
+| **Cortex Analyst** | 全托管的 LLM 功能，让业务人员用自然语言问结构化数据 | 把自然语言问题转成 SQL，在你自己的 warehouse 上执行；以 REST API 提供；依赖 Semantic View（旧的 YAML 语义模型仍兼容）；⚠️ 文档顶部建议迁移到 Cortex Agents |
+
+**一句话区分（对应 Q14 / Q101 / Q102）：**
+- 想**写代码**处理数据 → Snowpark
+- 想**做界面** → Streamlit
+- 想用现成的 **SQL 函数做预测/异常检测** → ML Functions
+- 想**调大模型处理文本/图片** → Cortex AI Functions
+- 想**搜非结构化文本** → Cortex Search
+- 想用**自然语言查结构化表** → Cortex Analyst
+
+> 说明：Copilot、Fine-tuning、Analyst、Notebooks 的文档都带有迁移或弃用提示，但考试题库可能仍按旧名称出题，答题时按题目给出的名称作答。
+
 ### 总览
 - ⭐⭐⭐ [Snowflake AI & ML](https://docs.snowflake.com/en/guides-overview-ai-features) — Cortex AI Functions、Cortex Search、Cortex Analyst、Document AI、ML Functions
 - ⭐ [Snowflake Horizon Catalog](https://docs.snowflake.com/en/user-guide/snowflake-horizon)
