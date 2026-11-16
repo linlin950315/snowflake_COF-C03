@@ -286,15 +286,166 @@ Snowflake 从高到低分三层：
 
 按课程每一讲对应官方文档（截图显示本章 22 讲约 1 小时 55 分，我只看到 38～58 共 21 讲，第 59 讲未见，需补）。题目按讲次归属为推测，以题库内容为准。
 
-### 访问控制（38～43 讲）
-- [ ] **38. Account Access & Security Introduction**（章节介绍，无需文档）
+### 📌 知识点速记（按官方文档整理，2026-11 核对）
 
-- [ ] **39. Access Control Overview**
+> 按知识本身分 5 个模块：访问控制 → 认证 → 网络与加密 → 数据保护 → 监控与血缘。每个模块先看"概念定义"，再看"易混对比"。末尾只标出对应的题号，方便你学完回头做题。
+> 标 ⚠️ 的是文档页面里没写、靠课程或经验补充的内容，建议复核。
+
+#### 模块 1：访问控制（对应 39～43 讲）
+
+**核心模型：** Snowflake 以 RBAC 为主（权限给角色，角色给用户），同时有 DAC（每个对象有 owner，owner 可以授权）。没有"超级用户"，任何访问都需要相应权限，默认拒绝。
+
+| 概念 | 一句话定义 | 要点 |
+|---|---|---|
+| **Securable object** | 可以被授予访问权限的对象 | 层级：账号 → 数据库 → schema → 表、视图、函数、stage 等 |
+| **OWNERSHIP** | 对象的拥有权，可删除、修改、授予或撤销访问 | 一个对象只有一个 owner 角色，默认是创建它的角色；owner 角色**不会**继承它所拥有的角色的权限 |
+| **MANAGE GRANTS** | 像 owner 一样对任何对象授予或撤销权限 | 默认只有 SECURITYADMIN 有；有它**不等于能创建对象** |
+| **角色层级** | 权限沿层级向上继承 | Role 3 授给 Role 2，Role 2 授给 Role 1，则 Role 1 拥有三者的权限 |
+| **Primary / Secondary Role** | 一次会话只有 1 个主角色，可同时有多个副角色 | **CREATE 对象只由主角色授权**，新对象的 owner 是主角色；其他操作任一活动角色有权限即可 |
+| **USE SECONDARY ROLES** | 设置当前会话的副角色 | `ALL`：每条语句都重新计算，新授予的角色自动生效；`NONE`：只用主角色；指定列表：立即校验，没授予会报错 |
+| **Managed Access Schema** | 把授权权限收归 schema owner | 对象 owner **失去**授权能力；只有 schema owner 或有 MANAGE GRANTS 的角色能授权（含 future grants） |
+| **Future Grants** | 对将来创建的某类对象预先授权 | 授给**需要访问的角色**；schema 级和 database 级同时存在时，**schema 级优先**，database 级被忽略；`GRANT ... ON ALL TABLES` 只覆盖已有表 |
+| **IS_ROLE_IN_SESSION** | 判断某账号角色是否在当前活动的主/副角色层级里 | 会考虑继承；在共享对象里返回 NULL；用于 masking / row access policy 时要求 Enterprise 及以上 |
+| **Database Role** | 限定在某个数据库内的角色 | **不能直接在会话中激活**，要授给账号角色；账号角色不能授给 database role；授给 share 后，不能再往它里面授其他 database role |
+
+**系统角色分工：**
+
+| 角色 | 负责什么 |
+|---|---|
+| *ORGADMIN*（第一层）| 组织层面的操作；文档说将逐步淘汰，推荐 GLOBALORGADMIN |
+| **ACCOUNTADMIN（第二层）** | 账号最高角色，包含 SYSADMIN 和 SECURITYADMIN；默认只有它能看账单和用量（`MONITOR USAGE` 可下放）；建议只给少数人，且不要设为默认角色；避免使用 ACCOUNTADMIN创建对象；避免在自动化脚本中使用 ACCOUNTADMIN |
+| **SYSADMIN（并列第三层）** | 创建仓库、数据库等对象；自定义角色放在它下面时，它才能管理这些角色拥有的对象 |
+| **SECURITYADMIN（并列第三层）** | 全局管理授权（有 MANAGE GRANTS privilege） |
+| **USERADMIN（SEC下面）** | 继承自SECURITYADMIN；创建和管理用户与角色（有 CREATE USER、CREATE ROLE） |
+| **PUBLIC** | 自动授予每个用户和每个角色的伪角色，它拥有的对象所有人都能用 |
+
+**谁能管对象的权限（常考表）：**
+
+| 角色 | 普通 schema | Managed access schema |
+|---|---|---|
+| SYSADMIN | 否 | 否 |
+| SECURITYADMIN 及以上 | 是 | 是 |
+| Database owner | 否 | 否 |
+| Schema owner | 否 | **是** |
+| Object owner | **是** | 否 |
+| 有 MANAGE GRANTS 的角色 | 是 | 是 |
+
+**易混对比：**
+- **CURRENT_ROLE** 只看当前主角色；**IS_ROLE_IN_SESSION** 能判断继承来的角色
+- **Secondary Roles** 是会话里叠加多个角色；**把角色授给父角色** 是改层级，两者不同
+- **MANAGE GRANTS** 能授权但不能建对象；建对象还要有对应的 CREATE 权限
+- **账号角色** 全账号有效；**Database Role** 只在一个库内，且要通过账号角色激活
+
+📝 本模块的题：[Q28](题库.md#q28)、[Q30](题库.md#q30)、[Q33](题库.md#q33)、[Q35](题库.md#q35)、[Q39](题库.md#q39)
+
+#### 模块 2：认证（对应 44～48 讲）
+
+| 概念 | 一句话定义 | 要点 |
+|---|---|---|
+| **Authentication Policy** | 控制客户端或用户**怎么认证**的策略 | 可设：允许的认证方式、客户端类型、MFA 要求、安全集成；默认全部允许；可设在账号或用户上，**用户级覆盖账号级**；`CLIENT_TYPES` 只是尽力而为，不能当唯一安全边界 |
+| **MFA** | 密码之外再加一个验证因子，面向**使用密码的真人用户** | 支持：**Passkey、Authenticator App（TOTP）、Duo**；用户自己注册；管理员用 Authentication Policy 的 `MFA_ENROLLMENT = REQUIRED` 强制；服务账号不能用 MFA，要用别的认证方式 |
+| **Federated Auth / SSO** | 由外部 IdP 做认证，Snowflake 是服务提供方（SP） | 支持 **SAML 2.0** 和 **OIDC**；Okta、Entra ID 有原生支持；SSO 用户默认不要求 MFA，依赖 IdP |
+| **Key-pair Authentication** | 用 RSA 公私钥对代替密码认证，公钥存在用户上 | 最小 2048 位 RSA；私钥建议加密（推荐 AES-256-CBC），口令只保护本地私钥、不发给 Snowflake；适合脚本、自动化 |
+| **密钥轮换** | 换新密钥而不中断连接 | 老方式：`RSA_PUBLIC_KEY` 和 `RSA_PUBLIC_KEY_2` 两个槽位，先设空的那个，客户端换新私钥后再清掉旧的；推荐的 named key pair 用 `ROTATE KEY PAIR`，旧钥默认再有效 24 小时 |
+| **OAuth** | 客户端通过安全集成拿访问令牌 | **Snowflake OAuth**（`TYPE = OAUTH`，需要浏览器）；**External OAuth**（`TYPE = EXTERNAL_OAUTH`，适合程序化客户端） |
+| **SCIM** | IdP 自动把用户和组（角色）同步到 Snowflake | 支持 Okta、Entra ID 和自定义 IdP；组对应角色；需用对应的 provisioner 角色拥有导入的用户和角色 |
+
+**认证检查顺序：** 网络策略 → 认证策略 → 密码策略 → 会话策略。网络策略一旦拦截，后面不会再执行。
+
+**易混对比：**
+- **MFA** 面向真人；**Key-pair** 面向服务账号和自动化
+- **SAML** 用 X.509 证书和 XML；**OIDC** 用 client ID/secret 和 JWT
+- **Federated Auth（SSO）** 管"谁来认证"；**SCIM** 管"用户和角色从哪来"
+- 为什么加密私钥：私钥文件泄露后，没有口令就不能直接冒用
+
+📝 本模块的题：[Q32](题库.md#q32)、[Q40](题库.md#q40)、[Q106](题库.md#q106)、[Q108](题库.md#q108)
+
+#### 模块 3：网络与加密（对应 49～50 讲）
+
+| 概念 | 一句话定义 | 要点 |
+|---|---|---|
+| **Network Policy** | 按请求来源控制对 Snowflake 服务和 **internal stage** 的**入站**访问 | 默认任何地址都能连，直到应用策略；有 allowed 和 blocked 两个列表，**同一标识两边都有时 blocked 优先**；必须激活到账号、用户或安全集成才生效；**越具体越优先：安全集成 > 用户 > 账号** |
+| **Network Rule** | 把网络标识分组的 schema 级对象，本身不表示允许或阻止 | 由使用它的功能决定允许还是阻止；`MODE`：`INGRESS`（入站）、`INTERNAL_STAGE`、`EGRESS`（出站，给外部网络访问用）；`TYPE`：`IPV4`、`IPV6`、`AWSVPCEID` 等 |
+| **旧 IP 列表** | `ALLOWED_IP_LIST` / `BLOCKED_IP_LIST` | 仍可用，但文档说**新策略都应使用 network rule**，且不要混用 |
+| **E2E Encryption** | 数据静态和传输中全程加密，第三方无法读取 | 传输用 TLS；internal stage 的文件在客户端上传前加密；external stage 推荐客户端加密 |
+| **分层密钥模型** | 4 层：根密钥 → 账号主密钥 → 表主密钥 → 文件密钥 | 每个账号有独立密钥层级；AWS 和 Azure 的根密钥在 HSM 里 |
+| **自动密钥轮换（rotation）** | 密钥使用超过 **30 天**自动换新 | 旧密钥只用来解密；加密新数据只用活动密钥 |
+| **Periodic rekeying** | 退役密钥超过 **1 年**后，用新密钥重新加密数据，旧密钥销毁 | 需要 **Enterprise 及以上**；在线完成，无停机；Fail-safe 里重加密的文件多收 7 天存储费 |
+| **Tri-Secret Secure** | 客户在云 KMS 里管理的密钥，与 Snowflake 密钥组合成复合主密钥 | 客户可随时撤销密钥来切断访问；密钥不可用超过约 10 分钟，账号内所有数据操作停止；⚠️ 版本要求（Business Critical）该页没写，请到 Tri-Secret Secure 页面核对 |
+
+**易混对比：**
+- **Network Policy** 管"**从哪**来的请求"（入站）；**External Network Access** 管"**往哪**发请求"（出站，用 EGRESS 规则）
+- **Network Policy / Rule** 管来源；**Authentication Policy** 管认证方式；**Tri-Secret** 管数据加密的密钥，三者不是一回事
+- **Rotation**（30 天，旧钥保留用于解密）vs **Rekeying**（1 年，重新加密数据，销毁旧钥）：别把 30 天和 1 年混了
+- 想限制 internal stage 访问，需要把 network rule 用在 policy 里，并要求账号参数 `ENFORCE_NETWORK_RULES_FOR_INTERNAL_STAGES = TRUE`（AWS）
+
+📝 本模块的题：[Q24](题库.md#q24)、[Q34](题库.md#q34)
+
+#### 模块 4：数据保护与治理（对应 51～54、56 讲）
+
+| 概念 | 一句话定义 | 要点 |
+|---|---|---|
+| **Masking Policy（动态数据脱敏）** | 在**查询时**按条件对**列**值脱敏，存储的数据不变 | **Enterprise 及以上**；schema 级对象，输入输出类型必须一致，一个策略可用于多个列；默认 object owner **不能**取消策略、也看不到被脱敏列的数据（职责分离） |
+| **External Tokenization** | 数据加载前由第三方先令牌化，查询时通过外部函数还原 | 需要第三方令牌化服务；**不支持 Secure Data Sharing**（动态脱敏支持） |
+| **Row Access Policy** | 决定查询能看到表或视图的**哪些行** | Enterprise 及以上；表达式返回 BOOLEAN；用**策略 owner 的角色**执行，所以用户不需要访问映射表；适用于 SELECT，以及 UPDATE、DELETE、MERGE 选中的行，**不阻止 INSERT** |
+| **Secure View** | 带 `SECURE` 关键字的视图，用于数据隐私 | 只有 owner 角色能看到定义；优化器不会重排 WHERE 之前的过滤，防止通过 UDF 泄露数据；**性能可能更慢**；**Data Sharing 必须用 secure view** |
+| **Object Tag** | 键值对，值总是字符串，是 schema 级对象 | 一个对象最多 **50** 个标签；表上的标签被所有列继承；设置标签所有版本都可用，**标签传播和 tag-based masking 需要 Enterprise 及以上** |
+| **Tag-based Masking** | 把 masking policy 绑到 tag 上，凡带该 tag 且类型匹配的列自动脱敏 | 直接绑在列上的策略**优先于**基于 tag 的策略 |
+| **Classification** | 自动发现敏感列并打上系统标签 | Enterprise 及以上；两个系统标签：`SNOWFLAKE.CORE.SEMANTIC_CATEGORY`（语义类别，如姓名）和 `SNOWFLAKE.CORE.PRIVACY_CATEGORY`（`IDENTIFIER` / `QUASI_IDENTIFIER` / `SENSITIVE`）；可用 tag map 把系统标签映射成自定义标签 |
+
+**易混对比：**
+- 隐藏**列里的值** → Masking Policy；隐藏**整行** → Row Access Policy
+- **一个列只能属于一种策略**：不能同时出现在 masking policy 和 row access policy 的参数里；两种策略都在一张表上时，**先执行 row access policy**
+- **Tag** 负责"标记和找到"敏感数据；**Policy** 负责"真正保护"。Tag 本身不脱敏
+- **Masking Policy** vs **Secure View**：文档指出 secure view 没有职责分离，还会造成视图泛滥；masking 不用建一堆视图
+- 条件里的角色函数：`CURRENT_ROLE` 看当前角色；`IS_ROLE_IN_SESSION` 会考虑角色层级；共享场景下 `CURRENT_ROLE`、`CURRENT_USER` 返回 NULL
+- 策略都**不支持 future grants**，变通办法是把 `APPLY MASKING POLICY` / `APPLY ROW ACCESS POLICY` / `APPLY TAG` 授给自定义角色
+
+📝 本模块的题：[Q23](题库.md#q23)、[Q27](题库.md#q27)、[Q29](题库.md#q29) ⚠️、[Q31](题库.md#q31)、[Q105](题库.md#q105) ⚠️
+
+#### 模块 5：监控与血缘（对应 55、57、58 讲）
+
+| 概念 | 一句话定义 | 要点 |
+|---|---|---|
+| **Account Usage** | `SNOWFLAKE` 共享库里的账号级历史和元数据视图 | 延迟：大多数视图约 2 小时，其余 45 分钟到 3 小时；历史视图保留 **1 年（365 天）**；**包含已删除对象**（名称为 NULL 表示已删除）；ACCOUNTADMIN 或有 `IMPORTED PRIVILEGES` 的角色可查 |
+| **Information Schema** | 每个数据库自带的只读元数据 schema | **无延迟**；保留 7 天到 6 个月（视图或函数而定）；**不含已删除对象**；范围是单个数据库 |
+| **ACCESS_HISTORY** | 记录查询读了哪些数据、语句写了哪些对象 | 在 `ACCOUNT_USAGE`；Enterprise 及以上；延迟约 3 小时，保留 1 年；一条语句一行；`direct_objects_accessed`（语句直接引用的对象和列）vs `base_objects_accessed`（底层源对象，含只用于过滤或 join 的列）；`objects_modified` 支撑**列级血缘**；`policies_referenced` 列出涉及的策略 |
+| **Data Lineage（Snowsight）** | 在 Snowsight 里查看数据上下游和列级血缘 | Enterprise 及以上；保留 1 年；两种关系：数据移动（CTAS、INSERT、MERGE）和对象依赖（视图引用表）；需要 `VIEW LINEAGE` 权限（PUBLIC 默认有）加对象上的权限；不支持共享库、SNOWFLAKE 库和 INFORMATION_SCHEMA 里的对象 |
+| **Alert** | schema 级对象：条件 + 满足时的动作 + 多久评估一次 | 创建后**默认挂起**，要 `ALTER ALERT ... RESUME`；省略 `WAREHOUSE` 即 serverless；创建需要账号级 `EXECUTE ALERT`（只有 ACCOUNTADMIN 能授予），serverless 还要 `EXECUTE MANAGED ALERT` |
+| **Notification** | 把消息发到邮件、云厂商队列、Webhook | 邮件用 `SYSTEM$SEND_EMAIL`，其他用 `SYSTEM$SEND_SNOWFLAKE_NOTIFICATION` ⚠️（此项来自清单原有内容，本轮未重新核对） |
+
+**易混对比：**
+- **Account Usage** vs **Information Schema**：
+
+| | Account Usage | Information Schema |
+|---|---|---|
+| 范围 | 整个账号 | 单个数据库 |
+| 延迟 | 45 分钟到 3 小时 | 无 |
+| 历史保留 | 1 年 | 7 天到 6 个月 |
+| 已删除对象 | 包含 | 不含 |
+
+- **Direct** vs **Base**：direct 是你写在 SQL 里的对象，base 是底层真正的数据来源
+- **SHOW GRANTS** 只说明"谁**有**权限"，**不记录谁访问过**；要看实际访问要用 ACCESS_HISTORY
+- **ACCESS_HISTORY**（SQL 查询，可做影响分析）vs **Data Lineage**（Snowsight 图形界面）：后者的列级血缘建立在前者的基础上
+- **Alert**（按条件触发动作）vs **Notification**（只负责发消息）
+
+📝 本模块的题：[Q22](题库.md#q22)、[Q25](题库.md#q25)
+
+#### 其他：Git 集成（Q44）
+
+题库答案和官方文档不一致，见 [Q44](题库.md#q44)，以文档为准（Git 集成 = Secret + API Integration）。这部分不在本章视频范围内。
+
+### 按讲次排列的文档清单
+
+### 访问控制（38～43 讲）
+- [x] **38. Account Access & Security Introduction**（章节介绍，无需文档）
+
+- [x] **39. Access Control Overview**
 - ⭐⭐⭐ [Access Control Overview](https://docs.snowflake.com/en/user-guide/security-access-control-overview) — RBAC / DAC、securable object、owner、角色继承
 - ⭐⭐ [Managed Access Schema](https://docs.snowflake.com/en/user-guide/security-access-control-configure#creating-managed-access-schemas) — 只有 schema owner / MANAGE GRANTS 能授权
 - 📝 [Q30](题库.md#q30) Managed Access Schema
 
-- [ ] **40. Roles**
+- [x] **40. Roles**
 - ⭐⭐⭐ [System-defined roles](https://docs.snowflake.com/en/user-guide/security-access-control-overview#system-defined-roles) — ORGADMIN / ACCOUNTADMIN / SECURITYADMIN / USERADMIN / SYSADMIN / PUBLIC
 - ⭐⭐ [Role hierarchy and privilege inheritance](https://docs.snowflake.com/en/user-guide/security-access-control-overview#role-hierarchy-and-privilege-inheritance)
 - ⭐⭐ [Secondary roles (USE SECONDARY ROLES)](https://docs.snowflake.com/en/sql-reference/sql/use-secondary-roles)
@@ -303,13 +454,13 @@ Snowflake 从高到低分三层：
 - 📝 [Q35](题库.md#q35) IS_ROLE_IN_SESSION
 - 📝 [Q33](题库.md#q33) SYSADMIN 权限范围（还需 S5）
 
-- [ ] **41. Role Types: Database Roles [COF-C03]**
+- [x] **41. Role Types: Database Roles [COF-C03]**
 - ⭐⭐⭐ [Database roles](https://docs.snowflake.com/en/user-guide/security-access-control-overview#database-roles-and-role-hierarchies) — 限定在某个 database 内；用于 Data Sharing 授权；不能在会话中直接激活，需授给账号角色（账号角色不能授给 database role）；可授给 share 或其他 database role
 - ⭐ [Account roles / Instance roles / Application roles](https://docs.snowflake.com/en/user-guide/security-access-control-overview#label-access-control-overview-role-types) — 其他角色类型
 
-- [ ] **42. Privileges**
+- [x] **42. Privileges**
 - ⭐⭐⭐ [Access control privileges](https://docs.snowflake.com/en/user-guide/security-access-control-privileges) — USAGE / SELECT / OWNERSHIP / MANAGE GRANTS 等
-- ⭐⭐ [Future Grants](https://docs.snowflake.com/en/user-guide/security-access-control-configure#defining-future-grants-on-database-or-schema-objects) — 对未来创建的对象预先授权
+- ⭐⭐ [Future Grants](https://docs.snowflake.com/en/user-guide/security-access-control-configure#defining-future-grants-on-database-or-schema-objects) — 对未来创建的对象预先授权( SQL文：GRANT SELECT ON FUTURE TABLES IN目標表 TO 目標ROLE )
 - 📝 [Q39](题库.md#q39) Future Grants
 
 - [ ] **43. Access Control - Hands-on**（实操：创建角色、授权、继承；复习 39～42 讲文档即可）
@@ -320,7 +471,7 @@ Snowflake 从高到低分三层：
 - ⭐⭐ [Authentication overview](https://docs.snowflake.com/en/user-guide/admin-security-fed-auth-overview)
 
 - [ ] **45. Multi-factor Authentication (MFA)**
-- ⭐⭐⭐ [MFA](https://docs.snowflake.com/en/user-guide/security-mfa) — 第二因子方式：Passkey（官方推荐）、Authenticator App（TOTP）、Duo；用户自行注册，管理员可用 Authentication Policy 限制允许的方式、强制注册；不支持邮件验证码/安全问题/社交登录
+- ⭐⭐⭐ [MFA](https://docs.snowflake.com/en/user-guide/security-mfa) — 第二因子方式：Passkey（官方推荐，私钥）、Authenticator App（TOTP Time-based One-Time Passcodes）、Duo；用户自行注册，管理员可用 Authentication Policy 限制允许的方式、强制注册；不支持邮件验证码/安全问题/社交登录
 - 📝 [Q32](题库.md#q32) MFA 第二因子方式
 
 - [ ] **46. Multi-factor Authentication (MFA) - Hands-on**（实操；MFA 文档同上，不用另读）
