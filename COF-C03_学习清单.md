@@ -300,7 +300,7 @@ Snowflake 从高到低分三层：
 | **Securable object** | 可以被授予访问权限的对象 | 层级：账号 → 数据库 → schema → 表、视图、函数、stage 等 |
 | **OWNERSHIP** | 对象的拥有权，可删除、修改、授予或撤销访问 | 一个对象只有一个 owner 角色，默认是创建它的角色；owner 角色**不会**继承它所拥有的角色的权限 |
 | **MANAGE GRANTS** | 像 owner 一样对任何对象授予或撤销权限 | 默认只有 SECURITYADMIN 有；有它**不等于能创建对象** |
-| **角色层级** | 权限沿层级向上继承 | Role 3 授给 Role 2，Role 2 授给 Role 1，则 Role 1 拥有三者的权限 |
+| **角色层级** | 权限沿层级向上继承（**权限从下往上走**） | Role 3 授给 Role 2，Role 2 授给 Role 1，则 Role 1 拥有三者的权限；`GRANT ROLE X TO ROLE Y`：`TO` 后面的 Y 是上层，拿到 X 的权限，X 拿不到 Y 的 |
 | **Primary / Secondary Role** | 一次会话只有 1 个主角色，可同时有多个副角色 | **CREATE 对象只由主角色授权**，新对象的 owner 是主角色；其他操作任一活动角色有权限即可 |
 | **USE SECONDARY ROLES** | 设置当前会话的副角色 | `ALL`：每条语句都重新计算，新授予的角色自动生效；`NONE`：只用主角色；指定列表：立即校验，没授予会报错 |
 | **Managed Access Schema** | 把授权权限收归 schema owner | 对象 owner **失去**授权能力；只有 schema owner 或有 MANAGE GRANTS 的角色能授权（含 future grants） |
@@ -332,6 +332,7 @@ Snowflake 从高到低分三层：
 
 **易混对比：**
 - **CURRENT_ROLE** 只看当前主角色；**IS_ROLE_IN_SESSION** 能判断继承来的角色
+- **权限从下往上走**：`GRANT ROLE X TO ROLE Y` 读作"把 X 赋予 Y"，Y 是上层，拥有 X 的全部权限；X（下层）看不到 Y。`IS_ROLE_IN_SESSION` 是从当前角色往下找，上层能看到下层，下层看不到上层
 - **Secondary Roles** 是会话里叠加多个角色；**把角色授给父角色** 是改层级，两者不同
 - **MANAGE GRANTS** 能授权但不能建对象；建对象还要有对应的 CREATE 权限
 - **账号角色** 全账号有效；**Database Role** 只在一个库内，且要通过账号角色激活
@@ -452,6 +453,8 @@ Snowflake 从高到低分三层：
 - ⭐ [IS_ROLE_IN_SESSION](https://docs.snowflake.com/en/sql-reference/functions/is_role_in_session)
 - 📝 [Q28](题库.md#q28) Secondary Roles
 - 📝 [Q35](题库.md#q35) IS_ROLE_IN_SESSION
+- 📝 [Q105](题库.md#q105) Masking Policy + 角色继承（角色继承出处；主归属在第 51 讲）
+- 📝 [Q105 变体 1～4](题库.md#q105-variants)（自编练习：IS_ROLE_IN_SESSION、多角色继承与分支顺序、授权方向反了、Secondary Roles）
 - 📝 [Q33](题库.md#q33) SYSADMIN 权限范围（还需 S5）
 
 - [x] **41. Role Types: Database Roles [COF-C03]**
@@ -466,22 +469,22 @@ Snowflake 从高到低分三层：
 - [ ] **43. Access Control - Hands-on**（实操：创建角色、授权、继承；复习 39～42 讲文档即可）
 
 ### 用户认证（44～48 讲）
-- [ ] **44. User Authentication**
+- [x] **44. User Authentication**
 - ⭐⭐⭐ [Authentication policies](https://docs.snowflake.com/en/user-guide/authentication-policies) — 限制认证方式、客户端类型、MFA 要求
 - ⭐⭐ [Authentication overview](https://docs.snowflake.com/en/user-guide/admin-security-fed-auth-overview)
 
-- [ ] **45. Multi-factor Authentication (MFA)**
-- ⭐⭐⭐ [MFA](https://docs.snowflake.com/en/user-guide/security-mfa) — 第二因子方式：Passkey（官方推荐，私钥）、Authenticator App（TOTP Time-based One-Time Passcodes）、Duo；用户自行注册，管理员可用 Authentication Policy 限制允许的方式、强制注册；不支持邮件验证码/安全问题/社交登录
+- [x] **45. Multi-factor Authentication (MFA)**
+- ⭐⭐⭐ [MFA](https://docs.snowflake.com/en/user-guide/security-mfa) — 第二因子方式：Passkey（官方推荐，私钥）、Authenticator App (验证码TOTP Time-based One-Time Passcode）、Duo App；用户自行注册，管理员可用 Authentication Policy 限制允许的方式、强制注册；不支持邮件验证码/安全问题/社交登录
 - 📝 [Q32](题库.md#q32) MFA 第二因子方式
 
 - [ ] **46. Multi-factor Authentication (MFA) - Hands-on**（实操；MFA 文档同上，不用另读）
 
-- [ ] **47. Federated Authentication**
+- [x] **47. Federated Authentication**
 - ⭐⭐⭐ [Federated authentication & SSO](https://docs.snowflake.com/en/user-guide/admin-security-fed-auth-overview) — IdP + Snowflake 作为 SP；支持 SAML 2.0 和 OpenID Connect（OIDC）；部分厂商（如 Okta、ADFS）有原生支持
 - ⭐ [Configuring Snowflake to use federated authentication](https://docs.snowflake.com/en/user-guide/admin-security-fed-auth-use)
 
 - [ ] **48. Key Pair Authentication, OAuth & SCIM**
-- ⭐⭐⭐ [Key-pair authentication](https://docs.snowflake.com/en/user-guide/key-pair-auth) — RSA_PUBLIC_KEY / RSA_PUBLIC_KEY_2 轮换；私钥可加密；适合服务账号
+- ⭐⭐⭐ [Key-pair authentication](https://docs.snowflake.com/en/user-guide/key-pair-auth) 用户名密码的替代方案；密钥轮换replacement of active keys；RSA_PUBLIC_KEY / RSA_PUBLIC_KEY_2 轮换；私钥可加密；适合服务账号
 - ⭐⭐ [OAuth](https://docs.snowflake.com/en/user-guide/oauth) — Snowflake OAuth / External OAuth
 - ⭐⭐ [SCIM](https://docs.snowflake.com/en/user-guide/scim-intro) — 自动同步用户和角色（Okta / Azure AD）
 - 📝 [Q40](题库.md#q40) Key-pair 密钥轮换
@@ -494,16 +497,18 @@ Snowflake 从高到低分三层：
 - ⭐⭐ [Network rules](https://docs.snowflake.com/en/user-guide/network-rules) — 把相关网络标识（IPv4/IPv6、AWS VPCE 等）分组，加入 network policy 的 allowed/blocked 列表（也用于出站网络访问）
 - 📝 [Q34](题库.md#q34) Network Rules / Network Policies
 
-- [ ] **50. Data Encryption**（已勾选）
+- [x] **50. Data Encryption**（已勾选）
 - ⭐⭐⭐ [End-to-end encryption](https://docs.snowflake.com/en/user-guide/security-encryption-end-to-end) — 数据存储和传输全程加密（AES-256）
-- ⭐⭐⭐ [Encryption key management](https://docs.snowflake.com/en/user-guide/security-encryption-manage) — 分层密钥、密钥超过 30 天自动轮换（rotation）；Enterprise 起可开启 periodic rekeying（退役密钥超过 1 年后重新加密数据）、Tri-Secret Secure（客户管理密钥 + Snowflake 密钥，需 Business Critical）
+- ⭐⭐⭐ [Encryption key management](https://docs.snowflake.com/en/user-guide/security-encryption-manage) — 分层密钥、密钥超过 30 天自动轮换（rotation）；Enterprise 起可开启 periodic rekeying（退役密钥超过 1 年后重新加密数据）、Tri-Secret Secure（客户管理密钥 + Snowflake 密钥，需 Business Critical）  
+- ⭐⭐⭐ [Tri-Secret Secure overview](https://docs.snowflake.com/en/user-guide/security-encryption-tss#label-encryption-tss-overview) — 客户管理密钥（CMK，存于云 KMS）与 Snowflake 管理密钥组合成复合主密钥；撤销客户密钥即可使数据不可访问；需 Business Critical 及以上
 - 📝 [Q24](题库.md#q24) Tri-Secret Secure（还需 S2-11）
 
 ### 数据治理与访问控制（51～54 讲）
 - [ ] **51. Column Level Security**
 - ⭐⭐⭐ [Dynamic Data Masking / Masking policies](https://docs.snowflake.com/en/user-guide/security-column-intro) — 查询时按角色脱敏（数据本身不变）；External Tokenization；需 Enterprise 及以上
 - 📝 [Q31](题库.md#q31) Masking Policy
-- 📝 [Q105](题库.md#q105) Masking Policy + 角色继承 ⚠️（还需 40 讲角色继承）
+- 📝 [Q105](题库.md#q105) Masking Policy + 角色继承 ⚠️（还需第 40 讲 Roles 的 Role hierarchy and privilege inheritance，第 39 讲 Overview 也有提及）
+- 📝 [Q105 变体 1～4](题库.md#q105-variants)（自编练习：IS_ROLE_IN_SESSION、多角色继承与分支顺序、授权方向反了、Secondary Roles）
 
 - [ ] **52. Row Level Security**
 - ⭐⭐⭐ [Row access policies](https://docs.snowflake.com/en/user-guide/security-row-intro) — 按角色/映射表决定能看到哪些行；需 Enterprise 及以上
