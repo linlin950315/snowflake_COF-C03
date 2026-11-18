@@ -288,7 +288,7 @@ Snowflake 从高到低分三层：
 
 ### 📌 知识点速记（按官方文档整理，2026-11 核对）
 
-> 按知识本身分 5 个模块：访问控制 → 认证 → 网络与加密 → 数据保护 → 监控与血缘。每个模块先看"概念定义"，再看"易混对比"。末尾只标出对应的题号，方便你学完回头做题。
+> 按知识本身分 5 个模块：访问控制 → 认证 → 网络与加密 → 数据保护 → 监控与脉络。每个模块先看"概念定义"，再看"易混对比"。末尾只标出对应的题号，方便你学完回头做题。
 > 标 ⚠️ 的是文档页面里没写、靠课程或经验补充的内容，建议复核。
 
 #### 模块 1：访问控制（对应 39～43 讲）
@@ -313,10 +313,10 @@ Snowflake 从高到低分三层：
 | 角色 | 负责什么 |
 |---|---|
 | *ORGADMIN*（第一层）| 组织层面的操作；文档说将逐步淘汰，推荐 GLOBALORGADMIN |
-| **ACCOUNTADMIN（第二层）** | 账号最高角色，包含 SYSADMIN 和 SECURITYADMIN；默认只有它能看账单和用量（`MONITOR USAGE` 可下放）；建议只给少数人，且不要设为默认角色；避免使用 ACCOUNTADMIN创建对象；避免在自动化脚本中使用 ACCOUNTADMIN |
+| **ACCOUNTADMIN（第二层）** | 账号最高角色，包含 SYSADMIN 和 SECURITYADMIN；SNOWFLAKE 库对所有用户可见，但 ACCOUNT_USAGE 等 schema 默认靠 ACCOUNTADMIN 查看，可用 `IMPORTED PRIVILEGES` 或 SNOWFLAKE 数据库角色（如 `USAGE_VIEWER`）下放；只应授给少数人（官方概览页原文）；⚠️ 不要设为默认角色、避免用它创建对象、避免用在自动化脚本中，是通用最佳实践，概览页没有原文 |
 | **SYSADMIN（并列第三层）** | 创建仓库、数据库等对象；自定义角色放在它下面时，它才能管理这些角色拥有的对象 |
 | **SECURITYADMIN（并列第三层）** | 全局管理授权（有 MANAGE GRANTS privilege） |
-| **USERADMIN（SEC下面）** | 继承自SECURITYADMIN；创建和管理用户与角色（有 CREATE USER、CREATE ROLE） |
+| **USERADMIN（SECURITYADMIN 下面）** | 被 SECURITYADMIN 继承（SECURITYADMIN 拥有 USERADMIN 的权限，不是反过来）；创建和管理用户与角色（有 CREATE USER、CREATE ROLE） |
 | **PUBLIC** | 自动授予每个用户和每个角色的伪角色，它拥有的对象所有人都能用 |
 
 **谁能管对象的权限（常考表）：**
@@ -367,17 +367,17 @@ Snowflake 从高到低分三层：
 |---|---|---|
 | **Network Policy** | 按请求来源控制对 Snowflake 服务和 **internal stage** 的**入站**访问 | 默认任何地址都能连，直到应用策略；有 allowed 和 blocked 两个列表，**同一标识两边都有时 blocked 优先**；必须激活到账号、用户或安全集成才生效；**越具体越优先：安全集成 > 用户 > 账号** |
 | **Network Rule** | 把网络标识分组的 schema 级对象，本身不表示允许或阻止 | 由使用它的功能决定允许还是阻止；`MODE`：`INGRESS`（入站）、`INTERNAL_STAGE`、`EGRESS`（出站，给外部网络访问用）；`TYPE`：`IPV4`、`IPV6`、`AWSVPCEID` 等 |
-| **旧 IP 列表** | `ALLOWED_IP_LIST` / `BLOCKED_IP_LIST` | 仍可用，但文档说**新策略都应使用 network rule**，且不要混用 |
+| **旧 IP 列表** | `ALLOWED_IP_LIST` / `BLOCKED_IP_LIST` | 仍可用，只支持 IPv4（IPv6 需用 network rule，`TYPE=IPV6`，仅 AWS、只管入站、不保护 internal stage）；network rule 更灵活；⚠️ 文档未写"应使用"，原清单的这句话没有核到原文 |
 | **E2E Encryption** | 数据静态和传输中全程加密，第三方无法读取 | 传输用 TLS；internal stage 的文件在客户端上传前加密；external stage 推荐客户端加密 |
 | **分层密钥模型** | 4 层：根密钥 → 账号主密钥 → 表主密钥 → 文件密钥 | 每个账号有独立密钥层级；AWS 和 Azure 的根密钥在 HSM 里 |
 | **自动密钥轮换（rotation）** | 密钥使用超过 **30 天**自动换新 | 旧密钥只用来解密；加密新数据只用活动密钥 |
-| **Periodic rekeying** | 退役密钥超过 **1 年**后，用新密钥重新加密数据，旧密钥销毁 | 需要 **Enterprise 及以上**；在线完成，无停机；Fail-safe 里重加密的文件多收 7 天存储费 |
+| **Periodic rekeying** | 退役密钥超过 **1 年**后，用新密钥重新加密数据，旧密钥不再使用 | 需要 **Enterprise 及以上**；在线完成，无停机；Fail-safe 里重加密的文件多收 7 天存储费 |
 | **Tri-Secret Secure** | 客户在云 KMS 里管理的密钥，与 Snowflake 密钥组合成复合主密钥 | 客户可随时撤销密钥来切断访问；密钥不可用超过约 10 分钟，账号内所有数据操作停止；⚠️ 版本要求（Business Critical）该页没写，请到 Tri-Secret Secure 页面核对 |
 
 **易混对比：**
 - **Network Policy** 管"**从哪**来的请求"（入站）；**External Network Access** 管"**往哪**发请求"（出站，用 EGRESS 规则）
 - **Network Policy / Rule** 管来源；**Authentication Policy** 管认证方式；**Tri-Secret** 管数据加密的密钥，三者不是一回事
-- **Rotation**（30 天，旧钥保留用于解密）vs **Rekeying**（1 年，重新加密数据，销毁旧钥）：别把 30 天和 1 年混了
+- **Rotation**（30 天，旧钥保留用于解密）vs **Rekeying**（1 年，用新钥重新加密数据，旧钥不再使用）：别把 30 天和 1 年混了
 - 想限制 internal stage 访问，需要把 network rule 用在 policy 里，并要求账号参数 `ENFORCE_NETWORK_RULES_FOR_INTERNAL_STAGES = TRUE`（AWS）
 
 📝 本模块的题：[Q24](题库.md#q24)、[Q34](题库.md#q34)
@@ -389,7 +389,7 @@ Snowflake 从高到低分三层：
 | **Masking Policy（动态数据脱敏）** | 在**查询时**按条件对**列**值脱敏，存储的数据不变 | **Enterprise 及以上**；schema 级对象，输入输出类型必须一致，一个策略可用于多个列；默认 object owner **不能**取消策略、也看不到被脱敏列的数据（职责分离） |
 | **External Tokenization** | 数据加载前由第三方先令牌化，查询时通过外部函数还原 | 需要第三方令牌化服务；**不支持 Secure Data Sharing**（动态脱敏支持） |
 | **Row Access Policy** | 决定查询能看到表或视图的**哪些行** | Enterprise 及以上；表达式返回 BOOLEAN；用**策略 owner 的角色**执行，所以用户不需要访问映射表；适用于 SELECT，以及 UPDATE、DELETE、MERGE 选中的行，**不阻止 INSERT** |
-| **Secure View** | 带 `SECURE` 关键字的视图，用于数据隐私 | 只有 owner 角色能看到定义；优化器不会重排 WHERE 之前的过滤，防止通过 UDF 泄露数据；**性能可能更慢**；**Data Sharing 必须用 secure view** |
+| **Secure View** | 带 `SECURE` 关键字的视图，用于数据隐私 | 仅授权用户（如 owner 角色）能看到定义；优化器不会重排 WHERE 之前的过滤，防止通过 UDF 泄露数据；**性能可能更慢**；标准视图和物化视图都能设为 secure；共享视图：默认只支持 secure view（"only secure views are supported in shares"，加标准视图会报错）；例外：创建 share 时设 `SECURE_OBJECTS_ONLY = FALSE` 才能共享非 secure 视图（设了就不能改回）；共享场景用 `CURRENT_ACCOUNT` 做按账号授权，`CURRENT_ROLE` / `CURRENT_USER` 在共享视图里返回 NULL（已对照官方 data-sharing 文档） |
 | **Object Tag** | 键值对，值总是字符串，是 schema 级对象 | 一个对象最多 **50** 个标签；表上的标签被所有列继承；设置标签所有版本都可用，**标签传播和 tag-based masking 需要 Enterprise 及以上** |
 | **Tag-based Masking** | 把 masking policy 绑到 tag 上，凡带该 tag 且类型匹配的列自动脱敏 | 直接绑在列上的策略**优先于**基于 tag 的策略 |
 | **Classification** | 自动发现敏感列并打上系统标签 | Enterprise 及以上；两个系统标签：`SNOWFLAKE.CORE.SEMANTIC_CATEGORY`（语义类别，如姓名）和 `SNOWFLAKE.CORE.PRIVACY_CATEGORY`（`IDENTIFIER` / `QUASI_IDENTIFIER` / `SENSITIVE`）；可用 tag map 把系统标签映射成自定义标签 |
@@ -398,20 +398,21 @@ Snowflake 从高到低分三层：
 - 隐藏**列里的值** → Masking Policy；隐藏**整行** → Row Access Policy
 - **一个列只能属于一种策略**：不能同时出现在 masking policy 和 row access policy 的参数里；两种策略都在一张表上时，**先执行 row access policy**
 - **Tag** 负责"标记和找到"敏感数据；**Policy** 负责"真正保护"。Tag 本身不脱敏
+- **Tag 的对象是元数据**（给表/视图/列分配标签、再查询标签来识别敏感数据，不碰实际数据）；**Tag-based masking** 的对象是**实际数据**（对带标签的列做脱敏）。题干问"识别/分配并查询元数据" → Tags，不是 Tag-based masking（Q23）
 - **Masking Policy** vs **Secure View**：文档指出 secure view 没有职责分离，还会造成视图泛滥；masking 不用建一堆视图
 - 条件里的角色函数：`CURRENT_ROLE` 看当前角色；`IS_ROLE_IN_SESSION` 会考虑角色层级；共享场景下 `CURRENT_ROLE`、`CURRENT_USER` 返回 NULL
 - 策略都**不支持 future grants**，变通办法是把 `APPLY MASKING POLICY` / `APPLY ROW ACCESS POLICY` / `APPLY TAG` 授给自定义角色
 
 📝 本模块的题：[Q23](题库.md#q23)、[Q27](题库.md#q27)、[Q29](题库.md#q29) ⚠️、[Q31](题库.md#q31)、[Q105](题库.md#q105) ⚠️
 
-#### 模块 5：监控与血缘（对应 55、57、58 讲）
+#### 模块 5：监控与脉络（对应 55、57、58 讲）
 
 | 概念 | 一句话定义 | 要点 |
 |---|---|---|
 | **Account Usage** | `SNOWFLAKE` 共享库里的账号级历史和元数据视图 | 延迟：大多数视图约 2 小时，其余 45 分钟到 3 小时；历史视图保留 **1 年（365 天）**；**包含已删除对象**（名称为 NULL 表示已删除）；ACCOUNTADMIN 或有 `IMPORTED PRIVILEGES` 的角色可查 |
 | **Information Schema** | 每个数据库自带的只读元数据 schema | **无延迟**；保留 7 天到 6 个月（视图或函数而定）；**不含已删除对象**；范围是单个数据库 |
-| **ACCESS_HISTORY** | 记录查询读了哪些数据、语句写了哪些对象 | 在 `ACCOUNT_USAGE`；Enterprise 及以上；延迟约 3 小时，保留 1 年；一条语句一行；`direct_objects_accessed`（语句直接引用的对象和列）vs `base_objects_accessed`（底层源对象，含只用于过滤或 join 的列）；`objects_modified` 支撑**列级血缘**；`policies_referenced` 列出涉及的策略 |
-| **Data Lineage（Snowsight）** | 在 Snowsight 里查看数据上下游和列级血缘 | Enterprise 及以上；保留 1 年；两种关系：数据移动（CTAS、INSERT、MERGE）和对象依赖（视图引用表）；需要 `VIEW LINEAGE` 权限（PUBLIC 默认有）加对象上的权限；不支持共享库、SNOWFLAKE 库和 INFORMATION_SCHEMA 里的对象 |
+| **ACCESS_HISTORY** | 记录查询读了哪些数据、语句写了哪些对象 | 在 `ACCOUNT_USAGE`；Enterprise 及以上；延迟约 3 小时，保留 1 年；一条语句一行；`direct_objects_accessed`（语句直接引用的对象和列）vs `base_objects_accessed`（底层源对象，含只用于过滤或 join 的列）；`objects_modified` 支撑**列级脉络**；`policies_referenced` 列出涉及的策略 |
+| **Data Lineage（Snowsight）** | 在 Snowsight 里查看数据上下游和列级脉络 | Enterprise 及以上；保留 1 年；两种关系：数据移动（CTAS、INSERT、MERGE）和对象依赖（视图引用表）；需要 `VIEW LINEAGE` 权限（PUBLIC 默认有）加对象上的权限；不支持共享库、SNOWFLAKE 库和 INFORMATION_SCHEMA 里的对象 |
 | **Alert** | schema 级对象：条件 + 满足时的动作 + 多久评估一次 | 创建后**默认挂起**，要 `ALTER ALERT ... RESUME`；省略 `WAREHOUSE` 即 serverless；创建需要账号级 `EXECUTE ALERT`（只有 ACCOUNTADMIN 能授予），serverless 还要 `EXECUTE MANAGED ALERT` |
 | **Notification** | 把消息发到邮件、云厂商队列、Webhook | 邮件用 `SYSTEM$SEND_EMAIL`，其他用 `SYSTEM$SEND_SNOWFLAKE_NOTIFICATION` ⚠️（此项来自清单原有内容，本轮未重新核对） |
 
@@ -426,8 +427,8 @@ Snowflake 从高到低分三层：
 | 已删除对象 | 包含 | 不含 |
 
 - **Direct** vs **Base**：direct 是你写在 SQL 里的对象，base 是底层真正的数据来源
-- **SHOW GRANTS** 只说明"谁**有**权限"，**不记录谁访问过**；要看实际访问要用 ACCESS_HISTORY
-- **ACCESS_HISTORY**（SQL 查询，可做影响分析）vs **Data Lineage**（Snowsight 图形界面）：后者的列级血缘建立在前者的基础上
+- **SHOW GRANTS** 列出"已授予角色/用户/share 的权限"（授权关系）；**谁实际读了数据**看 ACCESS_HISTORY（⚠️ SHOW GRANTS 页没有写"不记录访问"，这是两者用途不同的推论）
+- **ACCESS_HISTORY**（SQL 查询，可做影响分析）vs **Data Lineage**（Snowsight 图形界面）：后者的列级脉络建立在前者的基础上
 - **Alert**（按条件触发动作）vs **Notification**（只负责发消息）
 
 📝 本模块的题：[Q22](题库.md#q22)、[Q25](题库.md#q25)
@@ -492,8 +493,8 @@ Snowflake 从高到低分三层：
 - 📝 [Q108](题库.md#q108) 服务账号用 Key-pair
 
 ### 网络与加密（49～50 讲）
-- [ ] **49. Network Policies**
-- ⭐⭐⭐ [Network policies](https://docs.snowflake.com/en/user-guide/network-policies) — 控制谁能访问 Snowflake 服务和 internal stage；allowed 列表 / blocked 列表，同一地址两边都有时 blocked 优先；可应用到账号、security integration、用户，越具体的优先（用户 > integration > 账号）；新策略应使用 network rule，而非旧的 ALLOWED_IP_LIST
+- [x] **49. Network Policies**
+- ⭐⭐⭐ [Network policies](https://docs.snowflake.com/en/user-guide/network-policies) — 控制谁能访问 Snowflake 服务和 internal stage；allowed 列表 / blocked 列表，同一地址两边都有时 blocked 优先；可应用到账号、security integration、用户，越具体的优先（**integration > 用户 > 账号**，具体的覆盖宽泛的，不合并）；network rule 比旧的 ALLOWED_IP_LIST 更灵活
 - ⭐⭐ [Network rules](https://docs.snowflake.com/en/user-guide/network-rules) — 把相关网络标识（IPv4/IPv6、AWS VPCE 等）分组，加入 network policy 的 allowed/blocked 列表（也用于出站网络访问）
 - 📝 [Q34](题库.md#q34) Network Rules / Network Policies
 
@@ -511,7 +512,7 @@ Snowflake 从高到低分三层：
 - 📝 [Q105 变体 1～4](题库.md#q105-variants)（自编练习：IS_ROLE_IN_SESSION、多角色继承与分支顺序、授权方向反了、Secondary Roles）
 
 - [ ] **52. Row Level Security**
-- ⭐⭐⭐ [Row access policies](https://docs.snowflake.com/en/user-guide/security-row-intro) — 按角色/映射表决定能看到哪些行；需 Enterprise 及以上
+- ⭐⭐⭐ [Row access policies](https://docs.snowflake.com/en/user-guide/security-row-intro) — 按角色/映射表决定能看到哪些行allowed to see a particular record in a table；需 Enterprise 及以上
 - 📝 [Q27](题库.md#q27) Row Access Policy
 
 - [ ] **53. Column and Row Level Security - Hands-on**（实操；文档同 51、52 讲）
@@ -519,14 +520,14 @@ Snowflake 从高到低分三层：
 - [ ] **54. Secure Views**
 - ⭐⭐⭐ [Secure views](https://docs.snowflake.com/en/user-guide/views-secure) — 隐藏视图定义（仅 owner 角色可见），防止优化器泄露数据（代价是性能略低）；Data Sharing 必须用 secure view
 
-### 监控与血缘（55～58 讲）
+### 监控与脉络（55～58 讲）
 - [ ] **55. Account Usage & Information Schema**
 - ⭐⭐⭐ [Account Usage](https://docs.snowflake.com/en/sql-reference/account-usage) — SNOWFLAKE 共享库；有延迟（最长约 3 小时），保留 365 天
 - ⭐⭐⭐ [Information Schema](https://docs.snowflake.com/en/sql-reference/info-schema) — 每个库自带；实时，保留较短（约 7 天～6 个月，视视图而定）
-- ⭐⭐ [Access History](https://docs.snowflake.com/en/user-guide/access-history) — 记录谁读/写了哪些列，在 ACCOUNT_USAGE 的 ACCESS_HISTORY 视图；延迟约 3 小时，保留 1 年；Enterprise 及以上
-- 📝 [Q22](题库.md#q22) ACCESS_HISTORY 影响分析（58 讲血缘也相关）
+- ⭐⭐ [Access History](https://docs.snowflake.com/en/user-guide/access-history) — 记录谁读/写了哪些列 identify which users, dashboards, reports and processes might be affected，在 ACCOUNT_USAGE 的 ACCESS_HISTORY 视图；延迟约 3 小时，保留 1 年；Enterprise 及以上
+- 📝 [Q22](题库.md#q22) ACCESS_HISTORY 影响分析（58 讲脉络也相关）
 
-- [ ] **56. Object Tagging Hands-on**
+- [x] **56. Object Tagging Hands-on**
 - ⭐⭐⭐ [Object tagging](https://docs.snowflake.com/en/user-guide/object-tagging) — 标签继承（上层对象的标签自动继承给下层，如表→列）；创建/设置标签所有版本可用，tag-based masking 等进阶功能需 Enterprise 及以上
 - ⭐⭐ [Classification](https://docs.snowflake.com/en/user-guide/governance-classify-concepts) — 自动识别敏感列
 - 📝 [Q23](题库.md#q23) Object Tagging 识别敏感数据
@@ -537,32 +538,79 @@ Snowflake 从高到低分三层：
 - ⭐⭐ [Notifications / Notification integrations](https://docs.snowflake.com/en/user-guide/notifications/about-notifications) — 可发到云厂商队列（SNS / Pub/Sub / Event Grid）、邮件、Webhook；邮件用 SYSTEM$SEND_EMAIL，其他用 SYSTEM$SEND_SNOWFLAKE_NOTIFICATION
 
 - [ ] **58. Data Lineage - Hands-on [COF-C03]**
-- ⭐⭐⭐ [Data lineage](https://docs.snowflake.com/en/user-guide/ui-snowsight-lineage) — Snowsight 中查看上下游（upstream/downstream）依赖，含列级血缘（Column lineage）；需 Enterprise 及以上
-- 📝 [Q25](题库.md#q25) 列级血缘 ACCESS_HISTORY（答案 ACCESS_HISTORY，55 讲已讲过）
+- ⭐⭐⭐ [Data lineage](https://docs.snowflake.com/en/user-guide/ui-snowsight-lineage) — Snowsight 中查看上下游（upstream/downstream）依赖，含列级脉络（Column lineage）；需 Enterprise 及以上
+- 📝 [Q25](题库.md#q25) 列级脉络 ACCESS_HISTORY（答案 ACCESS_HISTORY，55 讲已讲过）
 - ⭐ [Aggregation Policies](https://docs.snowflake.com/en/user-guide/aggregation-policies) / [Projection Policies](https://docs.snowflake.com/en/user-guide/projection-policies) — 课程未单列，了解即可
 
 ## セクション5: Performance Concepts: Virtual Warehouses
 
-- ⭐⭐⭐ [Overview of Warehouses](https://docs.snowflake.com/en/user-guide/warehouses-overview) — 尺寸、计费、auto-suspend / auto-resume
-- ⭐⭐⭐ [Multi-cluster Warehouses](https://docs.snowflake.com/en/user-guide/warehouses-multicluster) — Maximized / Auto-scale、Standard / Economy
-- ⭐⭐ [Warehouse Considerations](https://docs.snowflake.com/en/user-guide/warehouses-considerations) — Scale up vs scale out
-- ⭐⭐ [Working with Warehouses](https://docs.snowflake.com/en/user-guide/warehouses-tasks)
-- ⭐⭐ [Cost & Billing](https://docs.snowflake.com/en/guides-overview-cost) — Credits、Resource Monitors
-- ⭐ [Query Acceleration Service](https://docs.snowflake.com/en/user-guide/query-acceleration-service)
+按课程每一讲对应官方文档（59～69 讲，共 11 讲；章节标题写 12 项，多出的 1 项应是测验之类）。题目按讲次归属为推测，以题库内容为准。
 
-### 📝 本章题目（题库）
+### 📌 学习顺序（先文档 → 做题 → 错了再看视频）
 
-| 讲次 | 题号 | 知识点 | 还需 |
-|---|---|---|---|
-| S5 | [Q63](题库.md#q63) | Query Acceleration Service 适用查询 |  |
-| S5 | [Q68](题库.md#q68) | Economy 扩展策略 |  |
-| S5 | [Q71](题库.md#q71) | 判断仓库过载（排队） |  |
-| S5 | [Q79](题库.md#q79) | 多集群 Auto-scale + Standard |  |
-| S5 | [Q81](题库.md#q81) | 按负载拆分仓库 |  |
-| S5 | [Q82](题库.md#q82) | AUTO_SUSPEND 与仓库缓存 | S6 |
-| S5 | [Q83](题库.md#q83) | MIN/MAX_CLUSTER_COUNT |  |
-| S5 | [Q88](题库.md#q88) | Query Acceleration Service |  |
-| S5 | [Q110](题库.md#q110) | QUEUED_OVERLOAD_TIME |  |
+本章内容少、考点集中（9 题，都是看场景选配置），文档短，适合先读文档再做题。
+
+1. **66 Multi-cluster**（Q71 / Q68 / Q79 / Q83）：Scale up vs scale out、Maximized vs Auto-scale、Standard vs Economy
+2. **69 QAS**（Q63 / Q88）：适合哪类查询
+3. **60～62 概览 / 大小 / 属性**（Q81；Q82 还需 S6）
+4. **64～65 Resource Monitors**（Q110；学完可做 S2-31 的 Q37 / Q38）
+5. **67 / 68** 题库无题，但是 C03 新增，各扫一遍文档
+6. **可跳过**：59（简介）、63（实操）；65 只看 Resource Monitor 创建部分
+7. 学完把 6 组对比写成小表：Scale up/out、Maximized/Auto-scale、Standard/Economy、QAS 适用查询、排队判断、Resource Monitor 动作
+
+### 基础（59～63 讲）
+- [ ] **59. Performance Concepts: Virtual Warehouses Introduction**（章节介绍，无需文档）
+
+- [ ] **60. Virtual Warehouse Overview**
+- ⭐⭐⭐ [Overview of Warehouses](https://docs.snowflake.com/en/user-guide/warehouses-overview) — 虚拟仓库 = 计算层；尺寸、auto-suspend / auto-resume
+
+- [ ] **61. Virtual Warehouse Sizing and Billing**
+- ⭐⭐⭐ [Warehouse sizes & credit usage](https://docs.snowflake.com/en/user-guide/warehouses-overview#warehouse-size) — 每升一档 credit 翻倍；按秒计费，每次启动最少 60 秒
+- ⭐⭐ [Warehouse Considerations](https://docs.snowflake.com/en/user-guide/warehouses-considerations) — Scale up（变大，提升单条复杂查询）vs Scale out（多集群，提升并发）
+- ⭐⭐ [Understanding compute cost](https://docs.snowflake.com/en/user-guide/cost-understanding-compute)
+- 📝 [Q70](题库.md#q70) 减少内存溢出 Spilling（S6，用「加大仓库」解；还需 S6）
+
+- [ ] **62. Virtual Warehouse State & Properties**
+- ⭐⭐⭐ [Working with Warehouses](https://docs.snowflake.com/en/user-guide/warehouses-tasks) — Started / Suspended / Resizing；AUTO_SUSPEND、AUTO_RESUME、STATEMENT_TIMEOUT 等属性
+- 📝 [Q81](题库.md#q81) 按负载拆分仓库
+- 📝 [Q82](题库.md#q82) AUTO_SUSPEND 与仓库缓存（还需 S6）
+
+- [ ] **63. Virtual Warehouse Overview - Hands-on**（实操：创建、调整仓库；复习 60～62 讲文档即可）
+
+### 监控（64～65 讲）
+- [ ] **64. Resource Monitors**
+- ⭐⭐⭐ [Resource monitors](https://docs.snowflake.com/en/user-guide/resource-monitors) — 设 credit 配额，达到阈值时通知 / 挂起；账号级或仓库级
+- 📝 [Q37](题库.md#q37) Budgets（S2-31，学完本讲可做）
+- 📝 [Q38](题库.md#q38) Budget vs Resource Monitor（S2-31，学完本讲可做）
+
+- [ ] **65. Compute Monitoring & Resource Monitors - Hands-on**
+- ⭐⭐ [Monitoring warehouse load](https://docs.snowflake.com/en/user-guide/warehouses-load-monitoring) — 查看仓库负载、排队
+- ⭐⭐ [QUERY_HISTORY view](https://docs.snowflake.com/en/sql-reference/account-usage/query_history) — `QUEUED_OVERLOAD_TIME`：因仓库负载（并发）排队的时间
+- 📝 [Q110](题库.md#q110) QUEUED_OVERLOAD_TIME
+
+### 扩展与新仓库类型（66～68 讲）
+- [ ] **66. Multi-cluster Warehouses**
+- ⭐⭐⭐ [Multi-cluster Warehouses](https://docs.snowflake.com/en/user-guide/warehouses-multicluster) — 需 Enterprise 及以上；MIN / MAX_CLUSTER_COUNT；Maximized（两者相等）vs Auto-scale；Standard（尽快启动新集群）vs Economy（至少满载 6 分钟才启动，省 credit）
+- 📝 [Q71](题库.md#q71) 判断仓库过载（排队）
+- 📝 [Q68](题库.md#q68) Economy 扩展策略
+- 📝 [Q79](题库.md#q79) 多集群 Auto-scale + Standard
+- 📝 [Q83](题库.md#q83) MIN/MAX_CLUSTER_COUNT
+
+- [ ] **67. Warehouse Generation [COF-C03]**
+- ⭐⭐ [Gen2 standard warehouses](https://docs.snowflake.com/en/user-guide/warehouses-gen2) — Gen2 是标准仓库的升级版（更快的硬件 + DELETE/UPDATE/MERGE、表扫描优化）；`GENERATION = '1'/'2'` 设置，不写默认 Gen2；Gen1 ⇄ Gen2 可用 ALTER WAREHOUSE 互转；仅标准仓库，不适用 Snowpark-optimized；新建 Gen2 默认开启 QAS；Snowsight 暂不支持，需用 SQL
+
+- [ ] **68. Snowpark Optimized Warehouses [COF-C03]**
+- ⭐⭐ [Snowpark-optimized warehouses](https://docs.snowflake.com/en/user-guide/warehouses-snowpark-optimized) — 每节点内存更大，适合 ML 训练等内存密集型 Snowpark 工作负载；只有标准 / 大内存计算选项（⚠️ 细节请对照官方页）
+
+### 加速（69 讲）
+- [ ] **69. Query Acceleration Service (QAS)**
+- ⭐⭐⭐ [Query Acceleration Service](https://docs.snowflake.com/en/user-guide/query-acceleration-service) — 把部分扫描、过滤工作卸载到 serverless 计算；适合扫描量大、过滤后结果少、或有大小不均的查询；`QUERY_ACCELERATION_MAX_SCALE_FACTOR`；Enterprise 及以上；有额外 credit 费用
+- 📝 [Q63](题库.md#q63) Query Acceleration Service 适用查询
+- 📝 [Q88](题库.md#q88) Query Acceleration Service
+
+### 其他
+- 📝 [Q33](题库.md#q33) SYSADMIN 权限范围（S4，还需 S5：SYSADMIN 创建仓库）
+- 📝 [Q84](题库.md#q84) 仓库缓存（S6，还需 S5）
 
 ## セクション6: Performance Concepts: Query Optimisation
 
