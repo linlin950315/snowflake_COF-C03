@@ -604,7 +604,12 @@ Snowflake 从高到低分三层：
 
 ### 加速（69 讲）
 - [ ] **69. Query Acceleration Service (QAS)**
-- ⭐⭐⭐ [Query Acceleration Service](https://docs.snowflake.com/en/user-guide/query-acceleration-service) — 把部分扫描、过滤工作卸载到 serverless 计算；适合扫描量大、过滤后结果少、或有大小不均的查询；`QUERY_ACCELERATION_MAX_SCALE_FACTOR`；Enterprise 及以上；有额外 credit 费用
+- ⭐⭐⭐ [Query Acceleration Service](https://docs.snowflake.com/en/user-guide/query-acceleration-service) — 给单个很耗资源的查询临时加算力。把部分扫描、过滤卸载到 serverless 计算，减轻离群查询（outlier）影响
+  - 适合：大扫描 + 选择性过滤/聚合；大量 INSERT/COPY
+  - 常见不适用：分区（partitions）太少、过滤选择性不够、GROUP BY 基数过高、阻止加速的 LIMIT 子句（LIMIT clause，系统自动判断）、SEQ/RANDOM 等非确定性函数
+  - `ENABLE_QUERY_ACCELERATION = TRUE`；`QUERY_ACCELERATION_MAX_SCALE_FACTOR`：仓库大小倍数，默认 8，0 = 无上限
+  - Enterprise+；按秒计 serverless credit，与仓库分开计费
+  - 判断适用：`SYSTEM$ESTIMATE_QUERY_ACCELERATION`、`QUERY_ACCELERATION_ELIGIBLE` 视图
 - 📝 [Q63](题库.md#q63) Query Acceleration Service 适用查询
 - 📝 [Q88](题库.md#q88) Query Acceleration Service
 
