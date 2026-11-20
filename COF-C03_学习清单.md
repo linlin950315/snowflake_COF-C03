@@ -550,10 +550,10 @@ Snowflake 从高到低分三层：
 
 本章内容少、考点集中（9 题，都是看场景选配置），文档短，适合先读文档再做题。
 
-1. **66 Multi-cluster**（Q71 / Q68 / Q79 / Q83）：Scale up vs scale out、Maximized vs Auto-scale、Standard vs Economy
+1. **66 Multi-cluster**（Q68 / Q79 / Q83）：Scale up vs scale out、Maximized vs Auto-scale、Standard vs Economy
 2. **69 QAS**（Q63 / Q88）：适合哪类查询
-3. **60～62 概览 / 大小 / 属性**（Q81；Q82 还需 S6）
-4. **64～65 Resource Monitors**（Q110；学完可做 S2-31 的 Q37 / Q38）
+3. **60～62 概览 / 大小 / 属性**（61：Q81；62：Q82 还需 S6）
+4. **64～65 Resource Monitors / 负载监控**（Q110 / Q71；学完可做 S2-31 的 Q37 / Q38）
 5. **67 / 68** 题库无题，但是 C03 新增，各扫一遍文档
 6. **可跳过**：59（简介）、63（实操）；65 只看 Resource Monitor 创建部分
 7. 学完把 6 组对比写成小表：Scale up/out、Maximized/Auto-scale、Standard/Economy、QAS 适用查询、排队判断、Resource Monitor 动作
@@ -567,13 +567,24 @@ Snowflake 从高到低分三层：
 - [ ] **61. Virtual Warehouse Sizing and Billing**
 - ⭐⭐⭐ [Warehouse sizes & credit usage](https://docs.snowflake.com/en/user-guide/warehouses-overview#warehouse-size) — 每升一档 credit 翻倍；按秒计费，每次启动最少 60 秒
 - ⭐⭐ [Warehouse Considerations](https://docs.snowflake.com/en/user-guide/warehouses-considerations) — Scale up（变大，提升单条复杂查询）vs Scale out（多集群，提升并发）
+  - 性质相近（homogeneous）的查询放同一仓库，负载不同就用不同仓库（加载 vs 报表 → Q81）
+  - 仓库缓存在挂起（suspend）时被清空，所以挂起后第一条查询会变慢；AUTO_SUSPEND 建议设得低（5～10 分钟以内），但要配合查询间隔（Q82 / Q84）
+- ⭐⭐ [Queries too large to fit in memory](https://docs.snowflake.com/en/user-guide/performance-query-warehouse-memory) — Spilling 解法：加大仓库 / 分小批处理（Q70）
 - ⭐⭐ [Understanding compute cost](https://docs.snowflake.com/en/user-guide/cost-understanding-compute)
 - 📝 [Q70](题库.md#q70) 减少内存溢出 Spilling（S6，用「加大仓库」解；还需 S6）
+- 📝 [Q81](题库.md#q81) 按负载拆分仓库
 
 - [ ] **62. Virtual Warehouse State & Properties**
 - ⭐⭐⭐ [Working with Warehouses](https://docs.snowflake.com/en/user-guide/warehouses-tasks) — Started / Suspended / Resizing；AUTO_SUSPEND、AUTO_RESUME、STATEMENT_TIMEOUT 等属性
-- 📝 [Q81](题库.md#q81) 按负载拆分仓库
+- ⭐⭐ [CREATE WAREHOUSE](https://docs.snowflake.com/en/sql-reference/sql/create-warehouse) — 以下属性的定义和默认值在这页（Working with Warehouses 页不列属性）
+  - **状态**：Started（运行中，计费）/ Suspended（已暂停，不计费）/ Resuming（启动中）；运行中调整大小**不影响正在执行的语句**，新资源就绪后用于排队中和之后的语句
+  - **AUTO_SUSPEND**：空闲多少秒后自动暂停（默认 600 秒）；设 0 或 NULL = 永不暂停（官方不推荐）。暂停会清空仓库本地缓存，太短会丢缓存、频繁重启（每次启动最少按 60 秒计费）（Q82）
+  - **AUTO_RESUME**：有查询提交时是否自动启动（默认 TRUE）；FALSE 时必须手动 `ALTER WAREHOUSE ... RESUME`
+  - **STATEMENT_TIMEOUT_IN_SECONDS**：单条语句最长运行时间，超时自动取消（默认 172800 秒 = 2 天）；可在账户 / 用户 / 会话 / 仓库级设置，仓库和会话都设时取**较小的非零值**
+  - **STATEMENT_QUEUED_TIMEOUT_IN_SECONDS**：语句最长排队等待时间，超时取消（默认 0 = 不限制）
+  - **INITIALLY_SUSPENDED**：创建后是否直接处于暂停状态（默认 FALSE，即创建后立即启动）
 - 📝 [Q82](题库.md#q82) AUTO_SUSPEND 与仓库缓存（还需 S6）
+- 📝 [Q84](题库.md#q84) 仓库缓存（挂起后丢失）（S6，还需本讲）
 
 - [ ] **63. Virtual Warehouse Overview - Hands-on**（实操：创建、调整仓库；复习 60～62 讲文档即可）
 
@@ -582,30 +593,52 @@ Snowflake 从高到低分三层：
 - ⭐⭐⭐ [Resource monitors](https://docs.snowflake.com/en/user-guide/resource-monitors) — 设 credit 配额，达到阈值时通知 / 挂起；账号级或仓库级
 - 📝 [Q37](题库.md#q37) Budgets（S2-31，学完本讲可做）
 - 📝 [Q38](题库.md#q38) Budget vs Resource Monitor（S2-31，学完本讲可做）
+- ⭐⭐ [Budgets](https://docs.snowflake.com/en/user-guide/budgets) — 对比 Resource Monitor 用
+
+  **Resource Monitor vs Budget（Account / Custom）**
+
+  | 维度 | Resource Monitor | Budget（Account / Custom） |
+  |---|---|---|
+  | **监控对象** | **只管用户自建的 warehouse**（user-managed warehouses） | Account budget 管整个账号；**Custom budget 管你指定的一组对象**，可以是 warehouse、database、schema、table、pipe、task、MV、compute pool 等，**也能按 object tag 归组** |
+  | **Serverless 功能** | ❌ **不能追踪** Snowpipe、Auto-clustering、MV 维护、Serverless task、Search Optimization 等 | ✅ **包含 serverless 功能的花费** |
+  | **作用级别** | 账号级（一个账号最多一个）或仓库级（一个 RM 可以管多个仓库，但一个仓库只能挂一个 RM） | 账号级一个 account budget，另外可以建多个 custom budget |
+  | **周期** | 可以选 Daily / Weekly / Monthly / Yearly / Never，也能自定义起止时间 | **只有月度**，每月 1 日 00:00 UTC 重置 |
+  | **额度单位** | Credit quota | 每月 spending limit（以 credit 计） |
+  | **触发方式** | 按**实际已用量**达到阈值触发（例如用到 80%、100%） | 按**预测值（projected/forecast）**判断，预计会超支时提前通知 |
+  | **能做的动作** | Notify；Notify & Suspend（等正在跑的查询完成后挂起）；Notify & Suspend Immediately（取消正在跑的查询并挂起）。**能直接挂起仓库** | 主要是**通知**：邮件、云消息队列（SNS / Event Grid / Pub/Sub）、Webhook（Slack / Teams 等）；也可以触发存储过程做自定义动作 |
+  | **谁能创建** | 只有 **ACCOUNTADMIN**（可以把 MONITOR / MODIFY 权限授给其他角色） | Custom budget 可以由拥有相应权限的非 ACCOUNTADMIN 角色创建 |
+  | **自身成本** | 不额外收费 | 本身会消耗少量 serverless credit |
+
+  - 记法：**RM 是"刹车"**（只管 warehouse，按实际用量到阈值后能直接挂起仓库）；**Budget 是"预警仪表盘"**（覆盖范围更广，含 serverless、可以按 tag 归组，按月度预测提前通知）
+  - 题眼：**Snowpipe / serverless / tag / forecast / projected → Budgets**；**suspend warehouse / credit quota / 阈值后挂起 → Resource Monitor**
 
 - [ ] **65. Compute Monitoring & Resource Monitors - Hands-on**
-- ⭐⭐ [Monitoring warehouse load](https://docs.snowflake.com/en/user-guide/warehouses-load-monitoring) — 查看仓库负载、排队
+- ⭐⭐ [Monitoring warehouse load](https://docs.snowflake.com/en/user-guide/warehouses-load-monitoring) — 查看仓库负载、排队；**有查询在排队（Queued）= 仓库过载**（Q71）
+  - 对策：负载高或有排队 → 另开仓库分流，或调整多集群设置加集群；负载低但慢 → 加大仓库
 - ⭐⭐ [QUERY_HISTORY view](https://docs.snowflake.com/en/sql-reference/account-usage/query_history) — `QUEUED_OVERLOAD_TIME`：因仓库负载（并发）排队的时间
 - 📝 [Q110](题库.md#q110) QUEUED_OVERLOAD_TIME
+- 📝 [Q71](题库.md#q71) 判断仓库过载（排队）
 
 ### 扩展与新仓库类型（66～68 讲）
 - [ ] **66. Multi-cluster Warehouses**
-- ⭐⭐⭐ [Multi-cluster Warehouses](https://docs.snowflake.com/en/user-guide/warehouses-multicluster) — 需 Enterprise 及以上；MIN / MAX_CLUSTER_COUNT；Maximized（两者相等）vs Auto-scale；Standard（尽快启动新集群）vs Economy（至少满载 6 分钟才启动，省 credit）
-- 📝 [Q71](题库.md#q71) 判断仓库过载（排队）
+- ⭐⭐⭐ [Multi-cluster Warehouses](https://docs.snowflake.com/en/user-guide/warehouses-multicluster) — 需 Enterprise 及以上；MIN / MAX_CLUSTER_COUNT；Maximized（两者相等）vs Auto-scale；Standard（默认；有排队就加集群，优先避免排队）vs Economy（预计能忙满 6 分钟才启动新集群，剩余工作不足 6 分钟就关，省 credit 但可能排队）；扩展策略只在 Auto-scale 模式下生效
 - 📝 [Q68](题库.md#q68) Economy 扩展策略
 - 📝 [Q79](题库.md#q79) 多集群 Auto-scale + Standard
 - 📝 [Q83](题库.md#q83) MIN/MAX_CLUSTER_COUNT
 
 - [ ] **67. Warehouse Generation [COF-C03]**
-- ⭐⭐ [Gen2 standard warehouses](https://docs.snowflake.com/en/user-guide/warehouses-gen2) — Gen2 是标准仓库的升级版（更快的硬件 + DELETE/UPDATE/MERGE、表扫描优化）；`GENERATION = '1'/'2'` 设置，不写默认 Gen2；Gen1 ⇄ Gen2 可用 ALTER WAREHOUSE 互转；仅标准仓库，不适用 Snowpark-optimized；新建 Gen2 默认开启 QAS；Snowsight 暂不支持，需用 SQL
+- ⭐⭐ [Gen2 standard warehouses](https://docs.snowflake.com/en/user-guide/warehouses-gen2) — Gen2 是标准仓库的升级版（更快的硬件 + DELETE/UPDATE/MERGE、表扫描优化）；`GENERATION = '1'/'2'` 设置，不写默认 Gen2；Gen1 ⇄ Gen2 可用 ALTER WAREHOUSE 互转；仅标准仓库，不适用 Snowpark-optimized；新建 Gen2 默认开启 QAS（Gen1 改成 Gen2 不会自动开）；Snowsight 暂不支持，需用 SQL
 
 - [ ] **68. Snowpark Optimized Warehouses [COF-C03]**
-- ⭐⭐ [Snowpark-optimized warehouses](https://docs.snowflake.com/en/user-guide/warehouses-snowpark-optimized) — 每节点内存更大，适合 ML 训练等内存密集型 Snowpark 工作负载；只有标准 / 大内存计算选项（⚠️ 细节请对照官方页）
+- ⭐⭐ [Snowpark-optimized warehouses](https://docs.snowflake.com/en/user-guide/warehouses-snowpark-optimized) — 单节点内存更大（默认是标准仓库的 16 倍），适合 ML 训练等内存密集型 Snowpark 工作负载，或依赖特定 CPU 架构（x86）的负载
+  - `RESOURCE_CONSTRAINT`：MEMORY_1X（16GB，最小 XS）/ **MEMORY_16X（256GB，默认，最小 M）** / MEMORY_64X（1TB，最小 L，仅 AWS 预览）；每种都有 `_x86` 版本
+  - 创建和恢复比标准仓库慢
 
 ### 加速（69 讲）
 - [ ] **69. Query Acceleration Service (QAS)**
 - ⭐⭐⭐ [Query Acceleration Service](https://docs.snowflake.com/en/user-guide/query-acceleration-service) — 给单个很耗资源的查询临时加算力。把部分扫描、过滤卸载到 serverless 计算，减轻离群查询（outlier）影响
-  - 适合：大扫描 + 选择性过滤/聚合；大量 INSERT/COPY
+  - 适合：大扫描 + 选择性过滤/聚合；大扫描 + 插入/复制大量新行（INSERT、COPY）（Q63）
+  - 新建的 Gen2 标准仓库、多集群仓库默认开启 QAS
   - 常见不适用：分区（partitions）太少、过滤选择性不够、GROUP BY 基数过高、阻止加速的 LIMIT 子句（LIMIT clause，系统自动判断）、SEQ/RANDOM 等非确定性函数
   - `ENABLE_QUERY_ACCELERATION = TRUE`；`QUERY_ACCELERATION_MAX_SCALE_FACTOR`：仓库大小倍数，默认 8，0 = 无上限
   - Enterprise+；按秒计 serverless credit，与仓库分开计费
