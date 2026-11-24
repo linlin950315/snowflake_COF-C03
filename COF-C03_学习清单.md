@@ -620,13 +620,28 @@ Snowflake 从高到低分三层：
 - 📝 [Q71](题库.md#q71) 判断仓库过载（排队）
 
 ### 扩展与新仓库类型（66～68 讲）
-- [ ] **66. Multi-cluster Warehouses**
-- ⭐⭐⭐ [Multi-cluster Warehouses](https://docs.snowflake.com/en/user-guide/warehouses-multicluster) — 需 Enterprise 及以上；MIN / MAX_CLUSTER_COUNT；Maximized（两者相等）vs Auto-scale；Standard（默认；有排队就加集群，优先避免排队）vs Economy（预计能忙满 6 分钟才启动新集群，剩余工作不足 6 分钟就关，省 credit 但可能排队）；扩展策略只在 Auto-scale 模式下生效
+- [x] **66. Multi-cluster Warehouses**
+- ⭐⭐⭐ [Multi-cluster Warehouses](https://docs.snowflake.com/en/user-guide/warehouses-multicluster) — 需 Enterprise 及以上
+
+  | 项目 | 选项 | 说明 |
+  |---|---|---|
+  | **集群数量参数** | `MIN_CLUSTER_COUNT` / `MAX_CLUSTER_COUNT` | 设置集群数量的下限和上限 |
+  | **模式** | Maximized Mode | MIN = MAX，所有集群一直运行 |
+  | | Auto-scale Mode | MIN < MAX，根据负载自动增减集群 |
+  | **扩展策略 Scaling Policy**（`SCALING_POLICY`，只在 Auto-scale 模式下生效） | Standard scaling policy（默认） | 一出现排队就加集群，优先避免排队 |
+  | | Economy scaling policy | 预计新集群能忙满 6 分钟才启动；剩余工作不足 6 分钟就关闭。省 credit，但可能排队 |
+
+  **速记：看场景选配置**（Q79）
+  - 并发高、有高峰低谷 → Auto-scale mode + Standard scaling policy
+  - 省 credit、可以接受一些排队 → Auto-scale mode + Economy scaling policy
+  - 并发高而且一直稳定（MIN = MAX）→ Maximized Mode
+  - 单个查询慢、数据加载 → Scale up（加大仓库规格）
+
 - 📝 [Q68](题库.md#q68) Economy 扩展策略
 - 📝 [Q79](题库.md#q79) 多集群 Auto-scale + Standard
 - 📝 [Q83](题库.md#q83) MIN/MAX_CLUSTER_COUNT
 
-- [ ] **67. Warehouse Generation [COF-C03]**
+- [x] **67. Warehouse Generation [COF-C03]**
 - ⭐⭐ [Gen2 standard warehouses](https://docs.snowflake.com/en/user-guide/warehouses-gen2) — Gen2 是标准仓库的升级版（更快的硬件 + DELETE/UPDATE/MERGE、表扫描优化）；`GENERATION = '1'/'2'` 设置，不写默认 Gen2；Gen1 ⇄ Gen2 可用 ALTER WAREHOUSE 互转；仅标准仓库，不适用 Snowpark-optimized；新建 Gen2 默认开启 QAS（Gen1 改成 Gen2 不会自动开）；Snowsight 暂不支持，需用 SQL
 
 - [ ] **68. Snowpark Optimized Warehouses [COF-C03]**
