@@ -50,7 +50,7 @@ Snowflake 从高到低分三层：
 
 - [x] **8. Storage Layer Overview**
 - ⭐⭐⭐ [Micro-partitions & Data Clustering](https://docs.snowflake.com/en/user-guide/tables-clustering-micropartitions) — 列式存储、微分区 50～500MB（未压缩）
-- 📝 [Q91](题库.md#q91) 微分区元数据（还需 S6）
+- 📝 [Q91](题库.md#q91) 微分区元数据（还需 S6-75 Clustering）
 
 - [x] **9. Query Processing Layer Overview**
 - ⭐⭐⭐ [Overview of Warehouses](https://docs.snowflake.com/en/user-guide/warehouses-overview) — 虚拟仓库就是计算层（セクション5 会细讲）
@@ -544,7 +544,7 @@ Snowflake 从高到低分三层：
 
 ## セクション5: Performance Concepts: Virtual Warehouses
 
-按课程每一讲对应官方文档（59～69 讲，共 11 讲；章节标题写 12 项，多出的 1 项应是测验之类）。题目按讲次归属为推测，以题库内容为准。
+按课程每一讲对应官方文档（59～69 讲，共 11 讲；章节标题写 12 项，多出的 1 项是小测试）。题目按讲次归属为推测，以题库内容为准。
 
 ### 📌 学习顺序（先文档 → 做题 → 错了再看视频）
 
@@ -559,32 +559,33 @@ Snowflake 从高到低分三层：
 7. 学完把 6 组对比写成小表：Scale up/out、Maximized/Auto-scale、Standard/Economy、QAS 适用查询、排队判断、Resource Monitor 动作
 
 ### 基础（59～63 讲）
-- [ ] **59. Performance Concepts: Virtual Warehouses Introduction**（章节介绍，无需文档）
+- [x] **59. Performance Concepts: Virtual Warehouses Introduction**（章节介绍，无需文档）
 
-- [ ] **60. Virtual Warehouse Overview**
+- [x] **60. Virtual Warehouse Overview**
 - ⭐⭐⭐ [Overview of Warehouses](https://docs.snowflake.com/en/user-guide/warehouses-overview) — 虚拟仓库 = 计算层；尺寸、auto-suspend / auto-resume
+  - ❌ **S5 小测试 Q1**：虚拟仓库 = 一个或多个计算节点的**命名抽象**（named abstraction for one or more compute nodes）。干扰项「用户自己搭建和维护的节点集群」错在后半句：节点由 Snowflake 全托管。也不是存储层，不是 schema 的归组（那是 database）
 
-- [ ] **61. Virtual Warehouse Sizing and Billing**
+- [x] **61. Virtual Warehouse Sizing and Billing**
 - ⭐⭐⭐ [Warehouse sizes & credit usage](https://docs.snowflake.com/en/user-guide/warehouses-overview#warehouse-size) — 每升一档 credit 翻倍；按秒计费，每次启动最少 60 秒
 - ⭐⭐ [Warehouse Considerations](https://docs.snowflake.com/en/user-guide/warehouses-considerations) — Scale up（变大，提升单条复杂查询）vs Scale out（多集群，提升并发）
   - 性质相近（homogeneous）的查询放同一仓库，负载不同就用不同仓库（加载 vs 报表 → Q81）
   - 仓库缓存在挂起（suspend）时被清空，所以挂起后第一条查询会变慢；AUTO_SUSPEND 建议设得低（5～10 分钟以内），但要配合查询间隔（Q82 / Q84）
 - ⭐⭐ [Queries too large to fit in memory](https://docs.snowflake.com/en/user-guide/performance-query-warehouse-memory) — Spilling 解法：加大仓库 / 分小批处理（Q70）
 - ⭐⭐ [Understanding compute cost](https://docs.snowflake.com/en/user-guide/cost-understanding-compute)
-- 📝 [Q70](题库.md#q70) 减少内存溢出 Spilling（S6，用「加大仓库」解；还需 S6）
+- 📝 [Q70](题库.md#q70) 减少内存溢出 Spilling（主归属 S6-71 SQL Tuning；用「加大仓库」解）
 - 📝 [Q81](题库.md#q81) 按负载拆分仓库
 
-- [ ] **62. Virtual Warehouse State & Properties**
-- ⭐⭐⭐ [Working with Warehouses](https://docs.snowflake.com/en/user-guide/warehouses-tasks) — Started / Suspended / Resizing；AUTO_SUSPEND、AUTO_RESUME、STATEMENT_TIMEOUT 等属性
+- [x] **62. Virtual Warehouse State & Properties**
+- ⭐⭐⭐ [Working with Warehouses](https://docs.snowflake.com/en/user-guide/warehouses-tasks) — Started / Resuming / Suspended（文档里没有 Resizing 这个状态，调整尺寸是一个操作）；AUTO_SUSPEND、AUTO_RESUME、STATEMENT_TIMEOUT 等属性
 - ⭐⭐ [CREATE WAREHOUSE](https://docs.snowflake.com/en/sql-reference/sql/create-warehouse) — 以下属性的定义和默认值在这页（Working with Warehouses 页不列属性）
-  - **状态**：Started（运行中，计费）/ Suspended（已暂停，不计费）/ Resuming（启动中）；运行中调整大小**不影响正在执行的语句**，新资源就绪后用于排队中和之后的语句
+  - **状态**：Started（运行中，计费）/ Suspended（已暂停，不计费）/ Resuming（启动中）；运行中调整大小**不影响正在执行的语句**，新资源就绪后用于排队中和之后的语句。❌ **S5 小测试 Q7**：不会中止、不会中止后重跑、不会挂起等待（Udemy 把这题归在 66 讲）
   - **AUTO_SUSPEND**：空闲多少秒后自动暂停（默认 600 秒）；设 0 或 NULL = 永不暂停（官方不推荐）。暂停会清空仓库本地缓存，太短会丢缓存、频繁重启（每次启动最少按 60 秒计费）（Q82）
-  - **AUTO_RESUME**：有查询提交时是否自动启动（默认 TRUE）；FALSE 时必须手动 `ALTER WAREHOUSE ... RESUME`
+  - **AUTO_RESUME**：有查询提交时是否自动启动（默认 TRUE）；FALSE 时必须手动 `ALTER WAREHOUSE ... RESUME`。❌ **S5 小测试 Q4**：取值类型是 **BOOLEAN**（TRUE / FALSE），别和 AUTO_SUSPEND（数字，空闲秒数）混
   - **STATEMENT_TIMEOUT_IN_SECONDS**：单条语句最长运行时间，超时自动取消（默认 172800 秒 = 2 天）；可在账户 / 用户 / 会话 / 仓库级设置，仓库和会话都设时取**较小的非零值**
   - **STATEMENT_QUEUED_TIMEOUT_IN_SECONDS**：语句最长排队等待时间，超时取消（默认 0 = 不限制）
-  - **INITIALLY_SUSPENDED**：创建后是否直接处于暂停状态（默认 FALSE，即创建后立即启动）
-- 📝 [Q82](题库.md#q82) AUTO_SUSPEND 与仓库缓存（还需 S6）
-- 📝 [Q84](题库.md#q84) 仓库缓存（挂起后丢失）（S6，还需本讲）
+  - **INITIALLY_SUSPENDED**：创建后是否直接处于暂停状态（默认 FALSE，即创建后立即启动）。❌ **S5 小测试 Q6**：别和 AUTO_RESUME（提交语句时自动启动）、AUTO_SUSPEND（空闲多少秒后暂停）混
+- 📝 [Q82](题库.md#q82) AUTO_SUSPEND 与仓库缓存（还需 S6-72 Caching）
+- 📝 [Q84](题库.md#q84) 仓库缓存（挂起后丢失）（主归属 S6-72 Caching，还需本讲）
 
 - [ ] **63. Virtual Warehouse Overview - Hands-on**（实操：创建、调整仓库；复习 60～62 讲文档即可）
 
@@ -637,6 +638,10 @@ Snowflake 从高到低分三层：
   - 并发高而且一直稳定（MIN = MAX）→ Maximized Mode
   - 单个查询慢、数据加载 → Scale up（加大仓库规格）
 
+  **❌ S5 小测试错题**
+  - Q9：`MIN_CLUSTER_COUNT` = 多集群仓库**最少由几个集群组成**（默认 1），`MAX_CLUSTER_COUNT` = 最多几个。管的是集群数，不是节点数，也不是「排队多少条才扩展」
+  - Q7（调整尺寸不影响正在跑的查询）Udemy 归在本讲，知识点记在 62 讲「状态」那一行
+
 - 📝 [Q68](题库.md#q68) Economy 扩展策略
 - 📝 [Q79](题库.md#q79) 多集群 Auto-scale + Standard
 - 📝 [Q83](题库.md#q83) MIN/MAX_CLUSTER_COUNT
@@ -644,15 +649,16 @@ Snowflake 从高到低分三层：
 - [x] **67. Warehouse Generation [COF-C03]**
 - ⭐⭐ [Gen2 standard warehouses](https://docs.snowflake.com/en/user-guide/warehouses-gen2) — Gen2 是标准仓库的升级版（更快的硬件 + DELETE/UPDATE/MERGE、表扫描优化）；`GENERATION = '1'/'2'` 设置，不写默认 Gen2；Gen1 ⇄ Gen2 可用 ALTER WAREHOUSE 互转；仅标准仓库，不适用 Snowpark-optimized；新建 Gen2 默认开启 QAS（Gen1 改成 Gen2 不会自动开）；Snowsight 暂不支持，需用 SQL
 
-- [ ] **68. Snowpark Optimized Warehouses [COF-C03]**
+- [x] **68. Snowpark Optimized Warehouses [COF-C03]**
 - ⭐⭐ [Snowpark-optimized warehouses](https://docs.snowflake.com/en/user-guide/warehouses-snowpark-optimized) — 单节点内存更大（默认是标准仓库的 16 倍），适合 ML 训练等内存密集型 Snowpark 工作负载，或依赖特定 CPU 架构（x86）的负载
-  - `RESOURCE_CONSTRAINT`：MEMORY_1X（16GB，最小 XS）/ **MEMORY_16X（256GB，默认，最小 M）** / MEMORY_64X（1TB，最小 L，仅 AWS 预览）；每种都有 `_x86` 版本
+  - `RESOURCE_CONSTRAINT`是对内存和CPU架构做进一步控制：MEMORY_1X（16GB，最小 XS）/ **MEMORY_16X（256GB，默认，最小 M）** / MEMORY_64X（1TB，最小 L，仅 AWS 预览）；每种都有 `_x86` 版本
   - 创建和恢复比标准仓库慢
+  - ❌ **S5 小测试 Q5**：和标准仓库的区别 = **More memory**（每个节点内存更大）。不是更便宜（Service Consumption Table：默认 MEMORY_16X 是同尺寸 Gen1 标准仓库的 1.5 倍，M 是 6 对 4；MEMORY_1X 和标准仓库一样），不是 SQL 更快，也不是并发更高（并发靠多集群）
 
 ### 加速（69 讲）
-- [ ] **69. Query Acceleration Service (QAS)**
+- [x] **69. Query Acceleration Service (QAS)**
 - ⭐⭐⭐ [Query Acceleration Service](https://docs.snowflake.com/en/user-guide/query-acceleration-service) — 给单个很耗资源的查询临时加算力。把部分扫描、过滤卸载到 serverless 计算，减轻离群查询（outlier）影响
-  - 适合：大扫描 + 选择性过滤/聚合；大扫描 + 插入/复制大量新行（INSERT、COPY）（Q63）
+  - 适合：大扫描 + 选择性过滤（selective filter）/ 聚合（aggregation）；大扫描 + 插入/复制大量新行（INSERT、COPY）（Q63）
   - 新建的 Gen2 标准仓库、多集群仓库默认开启 QAS
   - 常见不适用：分区（partitions）太少、过滤选择性不够、GROUP BY 基数过高、阻止加速的 LIMIT 子句（LIMIT clause，系统自动判断）、SEQ/RANDOM 等非确定性函数
   - `ENABLE_QUERY_ACCELERATION = TRUE`；`QUERY_ACCELERATION_MAX_SCALE_FACTOR`：仓库大小倍数，默认 8，0 = 无上限
@@ -661,44 +667,194 @@ Snowflake 从高到低分三层：
 - 📝 [Q63](题库.md#q63) Query Acceleration Service 适用查询
 - 📝 [Q88](题库.md#q88) Query Acceleration Service
 
+### 小测试
+- [x] **S5 小测试**（10 题，题目和解析在 [小测试.md](小测试.md)）：第一次 4/10。错的 Q1 / Q4 / Q5 / Q6 / Q7 / Q9 已在 60 / 62 / 66 / 68 讲标 ❌
+
 ### 其他
 - 📝 [Q33](题库.md#q33) SYSADMIN 权限范围（S4，还需 S5：SYSADMIN 创建仓库）
-- 📝 [Q84](题库.md#q84) 仓库缓存（S6，还需 S5）
+- 📝 [Q84](题库.md#q84) 仓库缓存（S6-72，还需 S5-62）
 
 ## セクション6: Performance Concepts: Query Optimisation
 
-- ⭐⭐⭐ [Performance Optimization 总览](https://docs.snowflake.com/en/guides-overview-performance)
-- ⭐⭐⭐ [Micro-partitions & Data Clustering](https://docs.snowflake.com/en/user-guide/tables-clustering-micropartitions) — Pruning、clustering depth
-- ⭐⭐⭐ [Query Profile](https://docs.snowflake.com/en/user-guide/ui-query-profile) — Spilling、Exploding joins
-- ⭐⭐⭐ [Persisted Query Results](https://docs.snowflake.com/en/user-guide/querying-persisted-results) — 结果缓存 24 小时
-- ⭐⭐ [Clustering Keys](https://docs.snowflake.com/en/user-guide/tables-clustering-keys)
-- ⭐⭐ [Search Optimization Service](https://docs.snowflake.com/en/user-guide/search-optimization-service)
-- ⭐⭐ [Materialized Views](https://docs.snowflake.com/en/user-guide/views-materialized)
+按课程每一讲对应官方文档（70～78 讲共 9 讲 + 小测试 4）。题目按讲次归属是根据课程标题和文档内容推测的（没看视频），看完如发现不符再调整。本章 21 题已逐题对照官方文档核对（2026-11-25），讨论版 PDF 里这些题都没有争议票。
+
+### 📌 速记：看题眼选功能
+
+| 题眼 | 选 | 题 |
+|---|---|---|
+| 找出最耗时的操作（operator） | Query Profile（Most Expensive Nodes） | Q65 |
+| 验证剪枝效果 | Query Profile 的 Statistics（Partitions scanned / total） | Q69 |
+| 找慢查询的优化建议（ACCOUNT_USAGE 视图） | QUERY_INSIGHTS | Q61 |
+| ACCOUNT_USAGE 查不到刚跑完的查询 | 有延迟（QUERY_HISTORY 最长 45 分钟） | Q36 |
+| Join 输出行数远多于输入 | Exploding join / 笛卡尔积 → 检查 join 条件 | Q73 / Q90 |
+| 内存溢出（spilling） | 加大仓库 / 分小批处理 | Q70 |
+| `SELECT COUNT(*)` | 元数据（Metadata-based Result，不用仓库） | Q89 |
+| 同一查询，换用户、换仓库再跑 | Result cache + 元数据 | Q87 |
+| 数据不变、定期重跑，什么时候变慢 | 数据一变 result cache 就作废 | Q109 |
+| 仓库挂起后第一条查询慢 | 仓库缓存被清空 | Q84；对策调大 AUTO_SUSPEND → Q82 |
+| 没挂起、隔几分钟重跑变快 | 仓库缓存还在 | Q111 |
+| 结果小、计算重、基表少变、只用一张表 | Materialized View | Q76 |
+| 聚合查询快速取结果 | Materialized View + Dynamic Table | Q64 |
+| 按某列过滤或排序（ORDER BY / GROUP BY） | Clustering（clustering key） | Q92 |
+| 优化"存储"（数据物理排列） | Automatic Clustering | Q66 |
+| 大表、高基数列上的点查（point lookup） | Search Optimization Service | Q72 / Q93 |
+| 单个复杂查询要临时加算力 | QAS（S5-69） | Q88 |
+
+**版本：** Materialized View、Search Optimization Service、QAS 都要 **Enterprise 及以上**；Clustering Keys / Automatic Clustering 的文档页没有写版本要求。
+
+### 总览
+- ⭐⭐⭐ [Performance Optimization 总览](https://docs.snowflake.com/en/guides-overview-performance) — 下面分 Exploring execution times、Optimizing query performance、Optimizing warehouses、Optimizing storage 等几块
 - ⭐ [Queries 总览](https://docs.snowflake.com/en/guides-overview-queries)
 
-### 📝 本章题目（题库）
+### 分析工具与 SQL 调优（70～71 讲）
+- [ ] **70. Query performance analysis tools - Hands-on**
+- ⭐⭐⭐ [Monitor query activity with Query History](https://docs.snowflake.com/en/user-guide/ui-snowsight-activity) — Snowsight 的 Query History（可查最近 14 天）和 Query Profile 说明都在这一页（旧链接 ui-query-profile 现在也打开这一页）
+  - **Query Profile**：一条查询的执行计划和每个 operator 的统计
+    - **Query Insights**：问题和建议
+    - **Most Expensive Nodes**：最耗时的 operator，从高到低排
+    - **Profile Overview**：时间花在哪类处理（processing / operation）上（CPU、磁盘 IO、网络等）
+    - **Statistics**：扫描量、缓存比例、Pruning（Partitions scanned / total）、Spilling（溢出到本地 / 远程）
+    - **Attributes**：所选 operator 的详情
+    - 用 SQL 拿同样的数据：GET_QUERY_OPERATOR_STATS
+  - Q65 干扰项：QUERY_HISTORY 视图只到"整条查询"这一级，看不到 operator；WAREHOUSE_LOAD_HISTORY 看的是仓库负载
+- ⭐⭐ [Exploring execution times](https://docs.snowflake.com/en/user-guide/performance-query-exploring) — ACCOUNT_USAGE 视图不会在查询跑完后马上更新：QUERY_HISTORY 最长 45 分钟、WAREHOUSE_LOAD_HISTORY 最长 3 小时；Information Schema 的 QUERY_HISTORY 表函数没有延迟（Q36）
+- ⭐⭐ [Query insights](https://docs.snowflake.com/en/user-guide/query-insights) / [QUERY_INSIGHTS view](https://docs.snowflake.com/en/sql-reference/account-usage/query_insights) — 有影响性能的情况时，Snowflake 自动给出说明和改进建议；Snowsight 里能看，也能查 ACCOUNT_USAGE.QUERY_INSIGHTS（延迟最长 90 分钟）（Q61）
+  - insight 分 5 类：TABLE_SCAN、JOIN、AGGREGATION、UNION、WAREHOUSE（例：没有 WHERE、exploding join、该用 UNION ALL、溢出到远程存储）
+  - 重用 result cache 的查询不产生 insight
+  - Q61 干扰项：QUERY_ATTRIBUTION_HISTORY = 单条查询花了多少计算成本；QUERY_ACCELERATION_HISTORY = 被 QAS 加速过的查询和消耗的 credit；ACCESS_HISTORY = 谁读写了哪些数据（S4-55）
+- 📝 [Q36](题库.md#q36) ACCOUNT_USAGE 延迟（S4-55 也讲过延迟）
+- 📝 [Q61](题库.md#q61) QUERY_INSIGHTS
+- 📝 [Q65](题库.md#q65) Query Profile 找最耗时操作
 
-| 讲次 | 题号 | 知识点 | 还需 |
-|---|---|---|---|
-| S6 | [Q36](题库.md#q36) | ACCOUNT_USAGE 延迟 |  |
-| S6 | [Q61](题库.md#q61) | QUERY_INSIGHTS |  |
-| S6 | [Q64](题库.md#q64) | MV / Dynamic Table 加速聚合 | S2-15, S2-26 |
-| S6 | [Q65](题库.md#q65) | Query Profile |  |
-| S6 | [Q66](题库.md#q66) | Automatic Clustering |  |
-| S6 | [Q69](题库.md#q69) | Query Profile 看剪枝 |  |
-| S6 | [Q70](题库.md#q70) | 减少内存溢出 Spilling | S5 |
-| S6 | [Q72](题库.md#q72) | Search Optimization Service |  |
-| S6 | [Q73](题库.md#q73) | Exploding Join |  |
-| S6 | [Q76](题库.md#q76) | Materialized View 适用场景 | S2-15 |
-| S6 | [Q80](题库.md#q80) | Clustering Depth |  |
-| S6 | [Q84](题库.md#q84) | 仓库缓存（挂起后丢失） | S5 |
-| S6 | [Q87](题库.md#q87) | 三种缓存 |  |
-| S6 | [Q89](题库.md#q89) | Metadata Cache（COUNT(*)） |  |
-| S6 | [Q90](题库.md#q90) | 笛卡尔积 Join |  |
-| S6 | [Q92](题库.md#q92) | Clustering 受益场景 |  |
-| S6 | [Q93](题库.md#q93) | SOS Search Access Path |  |
-| S6 | [Q109](题库.md#q109) | Result Cache 失效时机 |  |
-| S6 | [Q111](题库.md#q111) | 仓库缓存 |  |
+- [ ] **71. SQL Tuning**
+- ⭐⭐⭐ Query Profile 的 **Common query problems identified by Query Profile** 一节（在上面 Query History 那一页）— 文档列了 4 个常见问题：
+
+  | 问题 | Query Profile 里的表现 | 对策 |
+  |---|---|---|
+  | **Exploding joins** | Join 算子输出的行数比输入多很多（常差几个数量级）。原因：没写 join 条件，变成笛卡尔积（Cartesian product）；或一条记录匹配到另一张表的多条记录 | 补上或改正 join 条件（Q73 / Q90） |
+  | **UNION without ALL** | UNION 会多做一次去重 | 不需要去重时用 UNION ALL |
+  | **Queries too large to fit in memory** | 内存不够，先溢出到本地磁盘，还不够再溢出到远程存储（更慢） | 加大仓库 / 分小批处理（Q70） |
+  | **Inefficient pruning** | TableScan 的 Partitions scanned 接近 Partitions total | 见 75～77 讲 Clustering（Q69） |
+
+- ⭐⭐⭐ [Queries too large to fit in memory](https://docs.snowflake.com/en/user-guide/performance-query-warehouse-memory) — 文档给的对策只有两条：用更大的仓库（内存和本地存储更多）、分小批处理数据
+  - Q70 干扰项 C 容易混：多集群加的是集群数量，解决并发，不会给单条查询更多内存；挂起再恢复、加 clustering key 文档都没提
+- 📝 [Q73](题库.md#q73) Exploding Join
+- 📝 [Q90](题库.md#q90) 笛卡尔积 Join
+- 📝 [Q70](题库.md#q70) 减少内存溢出 Spilling（还需 S5-61）
+
+### 缓存（72～73 讲）
+- [ ] **72. Caching**
+
+  **三种缓存**
+
+  | 缓存 | 所在层 | 存什么 | 有效期 / 失效 | 题 |
+  |---|---|---|---|---|
+  | **元数据（课程叫 Metadata cache）** | Cloud Services | 表和微分区的元数据（如每列值的范围、不同值的个数） | 一直可用 | `SELECT COUNT(*)` 直接由元数据算出，Query Profile 显示 **Metadata-based Result** 算子，不经过仓库（Q89） |
+  | **Result cache**（Persisted query results） | Cloud Services | 查询结果 | 保留 24 小时；每被复用一次就重新计 24 小时，最长到首次执行后 31 天；基础数据一变就不能再用 | Q87 / Q109 |
+  | **Warehouse cache**（本地磁盘缓存） | 计算层（仓库） | 从存储读进来的表数据 | 只给同一个仓库上的查询用；仓库挂起（suspend）就清空 | Q84 / Q111 / Q82 |
+
+  - "所在层"是课程的讲法。文档能核到的是：元数据由 Cloud Services 管理；result cache 的复用条件里没有"同一仓库"这一条；仓库缓存只给同一仓库的查询用
+  - "Metadata cache"这个词文档里没有。文档的说法是 Metadata-based Result："A query whose result is computed based purely on metadata, without accessing any data. These queries are not processed by a virtual warehouse."
+
+  **Result cache 复用条件**（文档写明满足了也不保证一定复用）
+  - 新查询和之前的**完全一样**：大小写不同、用了表别名都不行
+  - 查询涉及的表数据没有变
+  - 当前角色有需要的权限（所以换个用户也能用，只要角色有权限）
+  - 不含非确定性函数（如 RANDOM、UUID_STRING、RANDSTR）和外部函数，不查 hybrid table
+  - 开关：`USE_CACHED_RESULT` 参数，默认开启，可在账号 / 用户 / 会话级关掉
+
+  **Q87 推理**：换了仓库 → 仓库缓存用不上；换了用户但角色有权限 → result cache 能用；元数据始终能用。
+  **Q109 推理**：每 8 小时跑一次 → 每次复用都把 24 小时重新计，结果一直有效；第 30 天加载新数据 → 数据变了，结果作废，查询变慢。31 天上限这里用不到，因为数据先变了。
+
+  **仓库缓存与 AUTO_SUSPEND**
+  - 缓存大小由仓库的计算资源决定；挂起时清空，恢复后头几条查询会慢一些，跑得越多缓存越完整（Q84）
+  - 取舍：挂起省 credit vs 保住缓存。Optimizing the warehouse cache 页建议 BI / SELECT 类仓库的 auto-suspend **至少 10 分钟**；Warehouse Considerations 页又说一般设低一点（5 或 10 分钟以下）。两页都是官方说法，做题看场景：查询间隔比 AUTO_SUSPEND 长、挂起后第一条慢 → 调大 AUTO_SUSPEND（Q82）
+  - Q111：AUTO_SUSPEND = 1800（30 分钟），10 分钟后重跑时仓库还没挂起，第一次读的数据还在仓库缓存里
+
+- ⭐⭐⭐ [Using Persisted Query Results](https://docs.snowflake.com/en/user-guide/querying-persisted-results) — 结果缓存：24 小时、最长 31 天、复用条件、USE_CACHED_RESULT
+- ⭐⭐⭐ [Optimizing the warehouse cache](https://docs.snowflake.com/en/user-guide/performance-query-warehouse-cache) — 仓库缓存、挂起清空、AUTO_SUSPEND 建议
+- ⭐⭐ [Monitor query activity with Query History](https://docs.snowflake.com/en/user-guide/ui-snowsight-activity) — 里面 Query Profile 的算子列表有 Metadata-based Result（例子就是 `SELECT COUNT(*)`）
+- ⭐ [Warehouse Considerations](https://docs.snowflake.com/en/user-guide/warehouses-considerations) — 缓存那一节（S5-61 已列）
+- 📝 [Q89](题库.md#q89) Metadata Cache（COUNT(*)）
+- 📝 [Q87](题库.md#q87) 三种缓存
+- 📝 [Q109](题库.md#q109) Result Cache 失效时机
+- 📝 [Q84](题库.md#q84) 仓库缓存（挂起后丢失）（还需 S5-62）
+- 📝 [Q111](题库.md#q111) 仓库缓存
+- 📝 [Q82](题库.md#q82) AUTO_SUSPEND 与仓库缓存（主归属 S5-62，缓存部分在本讲）
+
+- [ ] **73. Caching - Hands-on**（实操；文档同 72 讲）
+  - 动手对比时，可以先 `ALTER SESSION SET USE_CACHED_RESULT = FALSE;` 关掉结果缓存，才看得出仓库缓存的效果
+
+### 物化视图（74 讲）
+- [ ] **74. Materialized Views**
+- ⭐⭐⭐ [Working with Materialized Views](https://docs.snowflake.com/en/user-guide/views-materialized) — 需 **Enterprise**
+  - **特别适合**（Q76 题干的几条就出自这里）：结果的行或列比基表少很多；结果需要大量计算；查询的是外部表；基表不常变
+  - **该建 MV 而不是普通视图**：结果不常变 + 经常被用 + 查询很耗资源（三条都满足）
+  - **限制**：只能查一张表，定义里不能 join（包括 self-join）；不能查 hybrid table、dynamic table；不能用 Time Travel 建；聚合函数只支持一部分（如 COUNT、MIN、MAX、SUM、AVG、COUNT_IF），不能嵌套，DISTINCT 不能和聚合函数一起用
+  - **维护**：Snowflake 在后台自动维护（serverless，按秒计费），所以会有额外费用
+  - 能加速昂贵的聚合、投影、选择操作；优化器会自动改写查询去用 MV
+- ⭐⭐ [Decision guide for dynamic tables](https://docs.snowflake.com/en/user-guide/dynamic-tables/decision-guide) — MV、Dynamic Table、Streams + Tasks 怎么选：
+
+  | 场景 | Dynamic Table | Streams + Tasks | Materialized View |
+  |---|---|---|---|
+  | 单表查询加速 | 可以 | 可以 | **首选** |
+  | 带 join 或聚合的 SQL 管道 | **首选** | 可以 | 不行（只能单表） |
+  | 优化器自动改写查询去用预算结果 | 不行 | 不行 | **首选** |
+
+- 📝 [Q76](题库.md#q76) Materialized View 适用场景（还需 S2-15）
+- 📝 [Q64](题库.md#q64) MV / Dynamic Table 加速聚合（还需 S2-15、S2-26）
+  - MV 那一项文档有原话；Dynamic Table 那一项文档没有直接说"能加速聚合查询"，依据是 DT 存的是预先算好的结果，决策指南也把它列为"带聚合的管道"首选
+
+### 聚簇与剪枝（75～77 讲）
+- [ ] **75. Clustering**
+- ⭐⭐⭐ [Micro-partitions & Data Clustering](https://docs.snowflake.com/en/user-guide/tables-clustering-micropartitions)
+  - **微分区**：每个 50～500 MB（未压缩），列式存储，各列分开存
+  - **每个微分区存的元数据**：每列值的范围（range of values）、不同值的个数（number of distinct values），以及其他用于优化的属性（Q91）
+  - **Pruning（剪枝）**：查询时根据元数据跳过不需要的微分区
+  - **Clustering depth**：指定列上重叠微分区的平均深度（≥1）。**越小越好**：重叠少，剪枝效率高；空表为 0；完全没有重叠叫 constant state（Q80）
+  - 用途：判断一张大表要不要定义 clustering key
+- ⭐⭐ [SYSTEM$CLUSTERING_INFORMATION](https://docs.snowflake.com/en/sql-reference/functions/system_clustering_information) — 返回 JSON：总分区数、平均重叠数（average_overlaps）、平均深度（average_depth）、深度直方图等
+- ⭐ [SYSTEM$CLUSTERING_DEPTH](https://docs.snowflake.com/en/sql-reference/functions/system_clustering_depth) — 只返回平均深度
+- 📝 [Q80](题库.md#q80) Clustering Depth
+- 📝 [Q91](题库.md#q91) 微分区元数据（主归属 S2-8，本讲补全）
+
+- [ ] **76. Automatic Clustering**
+- ⭐⭐⭐ [Clustering Keys & Clustered Tables](https://docs.snowflake.com/en/user-guide/tables-clustering-keys)
+  - **哪些查询受益**：按 clustering key 过滤或排序的查询；排序包括 ORDER BY、GROUP BY 和部分 join（Q92）。文档补充：按 GROUP BY / ORDER BY 的列聚簇，通常不如按过滤、JOIN 常用的列聚簇效果好
+  - **什么时候定义**：表很大（通常是多 TB）、查询比预期慢或越来越慢、clustering depth 很大
+  - **怎么选列**：一般最多 3～4 列（或表达式）；按基数从低到高排；基数太低剪枝效果小，基数太高（如 UUID、纳秒级时间戳）也不适合直接用，可以用表达式降低基数
+  - **成本**：重聚簇要消耗 credit；旧微分区被标记删除，但会留给 Time Travel 和 Fail-safe，所以存储费也会增加
+  - Hybrid table 不能定义 clustering key
+- ⭐⭐⭐ [Automatic Clustering](https://docs.snowflake.com/en/user-guide/tables-auto-reclustering)
+  - 给表定义 clustering key 后就自动开始，不用别的操作
+  - **Serverless**：消耗 credit，但不需要你提供仓库
+  - 只在重聚簇有好处时才做，不是立刻做
+  - 暂停 / 恢复：`ALTER TABLE t1 SUSPEND RECLUSTER;` / `ALTER TABLE t1 RESUME RECLUSTER;`
+  - 克隆出来的表，Automatic Clustering 一开始是暂停状态（和 S9 克隆有关）
+  - 文档新内容：2026-09-01 起，新做聚簇的表用 **Optima Clustering**（按导入的未压缩数据量计费），已有的表仍是 Clustering Classic；题库可能还是旧说法
+- ⭐ [Optimizing storage](https://docs.snowflake.com/en/user-guide/performance-query-storage) — 总览页对这一节的说明：帮你在 Automatic Clustering、Search Optimization Service、Materialized View 之间选择
+- 📝 [Q92](题库.md#q92) Clustering 受益场景
+- 📝 [Q66](题库.md#q66) Automatic Clustering
+  - 文档没有"storage performance"这个说法，而且 SOS、MV 也都被归在"存储优化"里。选 Automatic Clustering 的理由：只有它是把表本身的行按 key 物理重新分组（"the rows are physically grouped based on the clustering key"），SOS 和 MV 是另外建的数据结构或对象
+
+- [ ] **77. Clustering & Pruning - Hands-on**
+  - 看一条查询剪枝好不好：Query Profile → TableScan 算子 → Statistics 面板的 **Partitions scanned** 和 **Partitions total**，扫描的比总数少得越多，剪枝越好（Q69）
+  - Q69 干扰项：`SYSTEM$CLUSTERING_INFORMATION` 看的是整张表的聚簇情况，不是某条查询实际扫了多少分区
+- 📝 [Q69](题库.md#q69) Query Profile 看剪枝（Query Profile 在 70 讲已介绍）
+
+### 搜索优化（78 讲）
+- [ ] **78. Search Optimization Service**
+- ⭐⭐⭐ [Search Optimization Service](https://docs.snowflake.com/en/user-guide/search-optimization-service) — 需 **Enterprise 及以上**
+  - **适合**：大表上选择性很强的点查（selective point lookup）；还支持 LIKE / ILIKE / RLIKE 子串和正则、SEARCH / SEARCH_IP 文本搜索、VARIANT / OBJECT / ARRAY 半结构化数据的等值和 IN 等条件、GEOGRAPHY 地理空间函数
+  - **Search access path（搜索访问路径）**：SOS 建立并维护的持久数据结构，记录表中各列的值可能出现在哪些微分区里（Q93）。访问路径完全建好之前，查询不会变快
+  - 开启：`ALTER TABLE t ADD SEARCH OPTIMIZATION;`
+  - **成本**：存储（访问路径通常约为原表的 1/4）+ 计算（首次构建，加上数据变动后的维护，维护量大致和新增或修改的数据量成正比），按秒计费
+- ⭐⭐ [Queries that benefit from search optimization](https://docs.snowflake.com/en/user-guide/search-optimization/queries-that-benefit) — 高基数的标准：过滤用到的列里至少有一列约 10 万个不同值以上；不支持 MV、外部表、hybrid table、临时表，不支持 FLOAT、GEOMETRY 类型
+- ⭐ [Search optimization cost estimation](https://docs.snowflake.com/en/user-guide/search-optimization/cost-estimation)
+- 📝 [Q72](题库.md#q72) Search Optimization Service（Clustering 不对：基数很高的列不适合直接做 clustering key）
+- 📝 [Q93](题库.md#q93) SOS Search Access Path
+
+- [ ] **小测试4: Performance Concepts: Query Optimization Quiz**
 
 ## セクション7: Data Loading & Unloading
 
