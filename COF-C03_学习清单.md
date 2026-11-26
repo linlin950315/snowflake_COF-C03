@@ -94,7 +94,6 @@ Snowflake 从高到低分三层：
 
 - ⭐⭐⭐ [Temporary and Transient Tables](https://docs.snowflake.com/en/user-guide/tables-temp-transient) — Permanent / Transient / Temporary 对比
 - ⭐⭐ [External Tables](https://docs.snowflake.com/en/user-guide/tables-external-intro)
-- ⭐ [Hybrid Tables](https://docs.snowflake.com/en/user-guide/tables-hybrid)
 - 📝 [Q6](题库.md#q6) 外部表的存储方式
 - 📝 [Q19](题库.md#q19) Transient 表降低 CDP 存储成本（还需 S9）
 
@@ -111,7 +110,6 @@ Snowflake 从高到低分三层：
 
 - [x] **17. Databases, Schemas, Tables & Views - Hands-on**
 - ⭐⭐ [String & binary data types](https://docs.snowflake.com/en/sql-reference/data-types-text) — CHAR / CHARACTER / STRING / TEXT 都只是 VARCHAR 的同义词，显示时统一为 VARCHAR（Q18 考点）
-- ⭐ [CREATE TABLE](https://docs.snowflake.com/en/sql-reference/sql/create-table) / [CREATE VIEW](https://docs.snowflake.com/en/sql-reference/sql/create-view) — 动手时查语法用
 - 📝 [Q18](题库.md#q18) CHARACTER 显示为 VARCHAR
 
 ### C03 新增（18～20 讲）
@@ -145,8 +143,7 @@ Snowflake 从高到低分三层：
 - [ ] **22. Stored Procedures**
 - ⭐⭐⭐ [Stored Procedures Overview](https://docs.snowflake.com/en/developer-guide/stored-procedure/stored-procedures-overview) — 与 UDF 的区别、owner's rights / caller's rights
 
-- [ ] **23. UDFs, External Functions & Stored Procedures - Hands-on**
-- ⭐⭐ [External Functions](https://docs.snowflake.com/en/sql-reference/external-functions-introduction) — API Integration、调用外部 API
+- [ ] **23. UDFs, External Functions & Stored Procedures - Hands-on**（实操；External Functions 不在考试说明里，UDF 和存储过程看 21、22 讲文档）
 
 - [ ] **24. Sequences**
 - ⭐⭐ [Using Sequences](https://docs.snowflake.com/en/user-guide/querying-sequences) — 不保证无间隙
@@ -207,8 +204,7 @@ Snowflake 从高到低分三层：
 - ⭐ [Developer](https://docs.snowflake.com/en/developer) — Snowpark、Streamlit、Native Apps
 - 📝 [Q44](题库.md#q44) Git 集成需要的对象 ⚠️（还需 S4）
 
-- [ ] **30. Snowflake Scripting**
-- ⭐⭐ [Snowflake Scripting](https://docs.snowflake.com/en/developer-guide/snowflake-scripting/index) — BEGIN…END、变量、游标、异常处理
+- [ ] **30. Snowflake Scripting**（考试说明里没有，可跳过）
 
 ### 计费（31 讲）
 - [x] **31. Billing Overview**
@@ -229,10 +225,8 @@ Snowflake 从高到低分三层：
 | **Snowflake Notebooks** | Snowsight 里统一的开发界面，单元格式环境，可写 Python、SQL、Markdown | 单元格类型：SQL / Python / Markdown；SQL 和 Snowpark 查询始终在 warehouse 上运行；⚠️ 文档已把原版改名 **Legacy Notebooks**，新一代是 Notebooks in Workspaces |
 | **Streamlit in Snowflake** | 帮开发者在 Snowflake 上安全地构建、部署、分享 Streamlit 应用 | Streamlit 本身是开源 Python 库；底层计算和存储由 Snowflake 管理；代码存在 Snowflake 对象里，用 RBAC 控制访问 |
 | **Cortex AI Functions (AISQL)** | 用 SQL（也可用 Python）直接调用 LLM，对文本和图片做非结构化分析 | 需要 `USE AI FUNCTIONS` 权限 + `CORTEX_USER` 或 `AI_FUNCTIONS_USER` 数据库角色；为吞吐量优化，适合批处理；旧的 `SNOWFLAKE.CORTEX.*` 函数是旧名 |
-| **Snowflake Copilot** | 由 LLM 驱动的助手，简化数据分析并保持数据治理 | 看不到表里的数据，只看元数据；不支持跨数据库或跨 schema 查询；权限靠 `COPILOT_USER` 角色（默认授予 PUBLIC）；⚠️ 文档顶部提示它**正被 Cortex Code 取代** |
 | **Document AI / Cortex AI Functions: Documents** | 以 Cortex AI 函数形式提供的文档智能：解析文档、提取结构化信息、分类文档 | 核心函数：`AI_PARSE_DOCUMENT`（解析，保留版面）、`AI_EXTRACT`（按 schema 提取）、`AI_CLASSIFY`（分类）；原 Document AI 链接现在指向这一页 |
 | **ML Functions** | 用机器学习给数据提供自动预测和洞察，无需 ML 专业知识 | 文档列出四个：**Forecasting**（预测时间序列未来值）、**Anomaly Detection**（标出异常值）、**Classification**（把行分到两个或多个类别）、**Top Insights**（找出对指标有意外影响的维度和值）；训练出的模型实例会产生存储费用 |
-| **Cortex Fine-tuning** | 用自有数据定制大语言模型，针对特定任务 | 全托管，用 PEFT（参数高效微调）；训练数据需有 `prompt` 和 `completion` 两列；⚠️ 文档写明**计划 2027 年 Q1 弃用**，改用 Cortex Training |
 | **Cortex Search** | 对 Snowflake 数据做低延迟、高质量的"模糊"搜索 | 混合搜索：向量搜索 + 关键词搜索 + 语义重排；用 `CREATE CORTEX SEARCH SERVICE` 创建；常用于 RAG |
 | **Cortex Analyst** | 全托管的 LLM 功能，让业务人员用自然语言问结构化数据 | 把自然语言问题转成 SQL，在你自己的 warehouse 上执行；以 REST API 提供；依赖 Semantic View（旧的 YAML 语义模型仍兼容）；⚠️ 文档顶部建议迁移到 Cortex Agents |
 
@@ -244,11 +238,10 @@ Snowflake 从高到低分三层：
 - 想**搜非结构化文本** → Cortex Search
 - 想用**自然语言查结构化表** → Cortex Analyst
 
-> 说明：Copilot、Fine-tuning、Analyst、Notebooks 的文档都带有迁移或弃用提示，但考试题库可能仍按旧名称出题，答题时按题目给出的名称作答。
+> 说明：Analyst、Notebooks 的文档都带有迁移或弃用提示，但考试题库可能仍按旧名称出题，答题时按题目给出的名称作答。
 
 ### 总览
 - ⭐⭐⭐ [Snowflake AI & ML](https://docs.snowflake.com/en/guides-overview-ai-features) — Cortex AI Functions、Cortex Search、Cortex Analyst、Document AI、ML Functions
-- ⭐ [Snowflake Horizon Catalog](https://docs.snowflake.com/en/user-guide/snowflake-horizon)
 
 ### Snowpark 与 Notebooks（32～34 讲）
 - [x] **32. Introduction to Snowpark**
@@ -263,16 +256,14 @@ Snowflake 从高到低分三层：
 - ⭐⭐ [Develop and run code in Snowflake Notebooks](https://docs.snowflake.com/en/user-guide/ui-snowsight/notebooks-develop-run) — SQL 单元格、Python 单元格、Snowpark Session
 
 ### Cortex AI（35～36 讲）
-- [ ] **35. Snowflake Cortex: AISQL, Copilot & Document AI [COF-C03]**
+- [ ] **35. Snowflake Cortex: AISQL, Copilot & Document AI [COF-C03]**（Copilot 不在考试说明里，跳过）
 - ⭐⭐⭐ [Cortex AI Functions (AISQL)](https://docs.snowflake.com/en/user-guide/snowflake-cortex/aisql) — 官网现用 AI_ 前缀：AI_COMPLETE / AI_SUMMARIZE / AI_SENTIMENT / AI_TRANSLATE / AI_EXTRACT / AI_CLASSIFY / AI_FILTER 等（旧名 COMPLETE、SUMMARIZE 等是 SNOWFLAKE.CORTEX.* 旧函数，考试可能用旧名），直接在 SQL 里调 LLM，无需自建模型
-- ⭐⭐ [Snowflake Copilot](https://docs.snowflake.com/en/user-guide/snowflake-copilot) — 自然语言辅助写 SQL
 - ⭐⭐ [Document AI](https://docs.snowflake.com/en/user-guide/snowflake-cortex/document-ai/overview) — 从文档提取结构化信息（此链接现重定向到 Cortex AI Documents 页，官网主推 AI_EXTRACT 提取文档信息）
 - ⭐⭐ [ML Functions](https://docs.snowflake.com/en/guides-overview-ml-functions) — Forecasting、Anomaly Detection、Top Insights（归到本讲为推测）
 - 📝 [Q14](题库.md#q14) ML Functions（Top Insights）
 - 📝 [Q102](题库.md#q102) Snowflake Cortex
 
-- [ ] **36. Snowflake Cortex: Fine-tuning, Search & Analyst [COF-C03]**
-- ⭐⭐ [Cortex Fine-tuning](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-finetuning) — 用自有数据微调 LLM
+- [ ] **36. Snowflake Cortex: Fine-tuning, Search & Analyst [COF-C03]**（Fine-tuning 不在考试说明里，跳过）
 - ⭐⭐⭐ [Cortex Search](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-search/cortex-search-overview) — 非结构化文本的混合（向量 + 关键词）RAG搜索
 - ⭐⭐⭐ [Cortex Analyst](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-analyst) — 业务人员用自然语言问结构化数据，自动生成 SQL（依赖语义模型/semantic view；官网页首提示建议迁移到 Cortex Agents）
 - 📝 [Q101](题库.md#q101) Cortex Analyst
@@ -349,14 +340,12 @@ Snowflake 从高到低分三层：
 | **Key-pair Authentication** | 用 RSA 公私钥对代替密码认证，公钥存在用户上 | 最小 2048 位 RSA；私钥建议加密（推荐 AES-256-CBC），口令只保护本地私钥、不发给 Snowflake；适合脚本、自动化 |
 | **密钥轮换** | 换新密钥而不中断连接 | 老方式：`RSA_PUBLIC_KEY` 和 `RSA_PUBLIC_KEY_2` 两个槽位，先设空的那个，客户端换新私钥后再清掉旧的；推荐的 named key pair 用 `ROTATE KEY PAIR`，旧钥默认再有效 24 小时 |
 | **OAuth** | 客户端通过安全集成拿访问令牌 | **Snowflake OAuth**（`TYPE = OAUTH`，需要浏览器）；**External OAuth**（`TYPE = EXTERNAL_OAUTH`，适合程序化客户端） |
-| **SCIM** | IdP 自动把用户和组（角色）同步到 Snowflake | 支持 Okta、Entra ID 和自定义 IdP；组对应角色；需用对应的 provisioner 角色拥有导入的用户和角色 |
 
 **认证检查顺序：** 网络策略 → 认证策略 → 密码策略 → 会话策略。网络策略一旦拦截，后面不会再执行。
 
 **易混对比：**
 - **MFA** 面向真人；**Key-pair** 面向服务账号和自动化
 - **SAML** 用 X.509 证书和 XML；**OIDC** 用 client ID/secret 和 JWT
-- **Federated Auth（SSO）** 管"谁来认证"；**SCIM** 管"用户和角色从哪来"
 - 为什么加密私钥：私钥文件泄露后，没有口令就不能直接冒用
 
 📝 本模块的题：[Q32](题库.md#q32)、[Q40](题库.md#q40)、[Q106](题库.md#q106)、[Q108](题库.md#q108)
@@ -375,7 +364,6 @@ Snowflake 从高到低分三层：
 | **Tri-Secret Secure** | 客户在云 KMS 里管理的密钥，与 Snowflake 密钥组合成复合主密钥 | 客户可随时撤销密钥来切断访问；密钥不可用超过约 10 分钟，账号内所有数据操作停止；⚠️ 版本要求（Business Critical）该页没写，请到 Tri-Secret Secure 页面核对 |
 
 **易混对比：**
-- **Network Policy** 管"**从哪**来的请求"（入站）；**External Network Access** 管"**往哪**发请求"（出站，用 EGRESS 规则）
 - **Network Policy / Rule** 管来源；**Authentication Policy** 管认证方式；**Tri-Secret** 管数据加密的密钥，三者不是一回事
 - **Rotation**（30 天，旧钥保留用于解密）vs **Rekeying**（1 年，用新钥重新加密数据，旧钥不再使用）：别把 30 天和 1 年混了
 - 想限制 internal stage 访问，需要把 network rule 用在 policy 里，并要求账号参数 `ENFORCE_NETWORK_RULES_FOR_INTERNAL_STAGES = TRUE`（AWS）
@@ -392,7 +380,6 @@ Snowflake 从高到低分三层：
 | **Secure View** | 带 `SECURE` 关键字的视图，用于数据隐私 | 仅授权用户（如 owner 角色）能看到定义；优化器不会重排 WHERE 之前的过滤，防止通过 UDF 泄露数据；**性能可能更慢**；标准视图和物化视图都能设为 secure；共享视图：默认只支持 secure view（"only secure views are supported in shares"，加标准视图会报错）；例外：创建 share 时设 `SECURE_OBJECTS_ONLY = FALSE` 才能共享非 secure 视图（设了就不能改回）；共享场景用 `CURRENT_ACCOUNT` 做按账号授权，`CURRENT_ROLE` / `CURRENT_USER` 在共享视图里返回 NULL（已对照官方 data-sharing 文档） |
 | **Object Tag** | 键值对，值总是字符串，是 schema 级对象 | 一个对象最多 **50** 个标签；表上的标签被所有列继承；设置标签所有版本都可用，**标签传播和 tag-based masking 需要 Enterprise 及以上** |
 | **Tag-based Masking** | 把 masking policy 绑到 tag 上，凡带该 tag 且类型匹配的列自动脱敏 | 直接绑在列上的策略**优先于**基于 tag 的策略 |
-| **Classification** | 自动发现敏感列并打上系统标签 | Enterprise 及以上；两个系统标签：`SNOWFLAKE.CORE.SEMANTIC_CATEGORY`（语义类别，如姓名）和 `SNOWFLAKE.CORE.PRIVACY_CATEGORY`（`IDENTIFIER` / `QUASI_IDENTIFIER` / `SENSITIVE`）；可用 tag map 把系统标签映射成自定义标签 |
 
 **易混对比：**
 - 隐藏**列里的值** → Masking Policy；隐藏**整行** → Row Access Policy
@@ -484,10 +471,9 @@ Snowflake 从高到低分三层：
 - ⭐⭐⭐ [Federated authentication & SSO](https://docs.snowflake.com/en/user-guide/admin-security-fed-auth-overview) — IdP + Snowflake 作为 SP；支持 SAML 2.0 和 OpenID Connect（OIDC）；部分厂商（如 Okta、ADFS）有原生支持
 - ⭐ [Configuring Snowflake to use federated authentication](https://docs.snowflake.com/en/user-guide/admin-security-fed-auth-use)
 
-- [ ] **48. Key Pair Authentication, OAuth & SCIM**
+- [ ] **48. Key Pair Authentication, OAuth & SCIM**（SCIM 不在考试说明里，跳过）
 - ⭐⭐⭐ [Key-pair authentication](https://docs.snowflake.com/en/user-guide/key-pair-auth) 用户名密码的替代方案；密钥轮换replacement of active keys；RSA_PUBLIC_KEY / RSA_PUBLIC_KEY_2 轮换；私钥可加密；适合服务账号
 - ⭐⭐ [OAuth](https://docs.snowflake.com/en/user-guide/oauth) — Snowflake OAuth / External OAuth
-- ⭐⭐ [SCIM](https://docs.snowflake.com/en/user-guide/scim-intro) — 自动同步用户和角色（Okta / Azure AD）
 - 📝 [Q40](题库.md#q40) Key-pair 密钥轮换
 - 📝 [Q106](题库.md#q106) 私钥加密
 - 📝 [Q108](题库.md#q108) 服务账号用 Key-pair
@@ -529,7 +515,6 @@ Snowflake 从高到低分三层：
 
 - [x] **56. Object Tagging Hands-on**
 - ⭐⭐⭐ [Object tagging](https://docs.snowflake.com/en/user-guide/object-tagging) — 标签继承（上层对象的标签自动继承给下层，如表→列）；创建/设置标签所有版本可用，tag-based masking 等进阶功能需 Enterprise 及以上
-- ⭐⭐ [Classification](https://docs.snowflake.com/en/user-guide/governance-classify-concepts) — 自动识别敏感列
 - 📝 [Q23](题库.md#q23) Object Tagging 识别敏感数据
 - 📝 [Q29](题库.md#q29) 审计敏感数据访问 ⚠️（答案 D=Object tagging；与 51 讲 tag-based masking 相关）
 
@@ -678,6 +663,26 @@ Snowflake 从高到低分三层：
 
 按课程每一讲对应官方文档（70～78 讲共 9 讲 + 小测试 4）。题目按讲次归属是根据课程标题和文档内容推测的（没看视频），看完如发现不符再调整。本章 21 题已逐题对照官方文档核对（2026-11-25），讨论版 PDF 里这些题都没有争议票。
 
+### 📌 考试说明对照
+
+依据 [SnowProCoreStudyGuideC03.pdf](SnowProCoreStudyGuideC03.pdf)（官方 Exam Study Guide，Last Updated: July 8, 2026）。本章对应 **Domain 4.0 Performance Optimization, Querying, and Transformation**（占 21%）的 4.1～4.3。下面的内容都按官方文档核对过（2026-11-26），没有题的考点也写了。
+
+| 考点（考试说明原文） | 本章位置 |
+|---|---|
+| **4.1 Evaluate query performance** | |
+| Query Performance Tuning → Query Profile/Query insights：Bytes spilled to storage、Inefficient pruning、Exploding joins、Queuing | 70～71 讲（Queuing 另见 S5-65） |
+| SNOWFLAKE.ACCOUNT_USAGE views：Query attribution、Query history | 70 讲 |
+| Workload management best practices：Grouping similar workloads | S5-61（Q81） |
+| **4.2 Optimize query performance** | |
+| Query acceleration service | S5-69 |
+| Search optimization service | 78 讲 |
+| Clustering keys | 75～77 讲 |
+| Materialized views | 74 讲 |
+| **4.3 Use Snowflake caching**：Query result cache、Metadata cache、Warehouse cache | 72～73 讲 |
+
+- 4.4 Perform data transformation techniques（Structured / Semi-structured / Unstructured、Aggregate functions、Applying SQL for query optimization、Window functions）归 S8
+- Domain 1.5 里的 Micro-partitions、Data clustering、Materialized 视图，本章 74～75 讲也会讲到
+
 ### 📌 速记：看题眼选功能
 
 | 题眼 | 选 | 题 |
@@ -699,12 +704,13 @@ Snowflake 从高到低分三层：
 | 优化"存储"（数据物理排列） | Automatic Clustering | Q66 |
 | 大表、高基数列上的点查（point lookup） | Search Optimization Service | Q72 / Q93 |
 | 单个复杂查询要临时加算力 | QAS（S5-69） | Q88 |
+| 范围查询、不等式过滤 | Automatic Clustering | — |
+| 每条查询花了多少 compute credit、按用户 / 部门分摊 | QUERY_ATTRIBUTION_HISTORY（+ QUERY_TAG / object tag） | — |
 
-**版本：** Materialized View、Search Optimization Service、QAS 都要 **Enterprise 及以上**；Clustering Keys / Automatic Clustering 的文档页没有写版本要求。
+**版本：** Materialized View、Search Optimization Service、QAS 都要 **Enterprise 及以上**；Automatic Clustering **Standard 版就有**（Optimizing storage 页："Available in Standard Edition of Snowflake."）。
 
 ### 总览
 - ⭐⭐⭐ [Performance Optimization 总览](https://docs.snowflake.com/en/guides-overview-performance) — 下面分 Exploring execution times、Optimizing query performance、Optimizing warehouses、Optimizing storage 等几块
-- ⭐ [Queries 总览](https://docs.snowflake.com/en/guides-overview-queries)
 
 ### 分析工具与 SQL 调优（70～71 讲）
 - [ ] **70. Query performance analysis tools - Hands-on**
@@ -715,24 +721,33 @@ Snowflake 从高到低分三层：
     - **Profile Overview**：时间花在哪类处理（processing / operation）上（CPU、磁盘 IO、网络等）
     - **Statistics**：扫描量、缓存比例、Pruning（Partitions scanned / total）、Spilling（溢出到本地 / 远程）
     - **Attributes**：所选 operator 的详情
-    - 用 SQL 拿同样的数据：GET_QUERY_OPERATOR_STATS
   - Q65 干扰项：QUERY_HISTORY 视图只到"整条查询"这一级，看不到 operator；WAREHOUSE_LOAD_HISTORY 看的是仓库负载
 - ⭐⭐ [Exploring execution times](https://docs.snowflake.com/en/user-guide/performance-query-exploring) — ACCOUNT_USAGE 视图不会在查询跑完后马上更新：QUERY_HISTORY 最长 45 分钟、WAREHOUSE_LOAD_HISTORY 最长 3 小时；Information Schema 的 QUERY_HISTORY 表函数没有延迟（Q36）
 - ⭐⭐ [Query insights](https://docs.snowflake.com/en/user-guide/query-insights) / [QUERY_INSIGHTS view](https://docs.snowflake.com/en/sql-reference/account-usage/query_insights) — 有影响性能的情况时，Snowflake 自动给出说明和改进建议；Snowsight 里能看，也能查 ACCOUNT_USAGE.QUERY_INSIGHTS（延迟最长 90 分钟）（Q61）
-  - insight 分 5 类：TABLE_SCAN、JOIN、AGGREGATION、UNION、WAREHOUSE（例：没有 WHERE、exploding join、该用 UNION ALL、溢出到远程存储）
+  - insight 分 5 类：TABLE_SCAN、JOIN、AGGREGATION、UNION、WAREHOUSE（例：没有 WHERE、exploding join、该用 UNION ALL、溢出到远程存储、在仓库队列里排太久）
+  - 也有**正面的** insight：过滤用到了 clustering key、查询受益于 search optimization
   - 重用 result cache 的查询不产生 insight
   - Q61 干扰项：QUERY_ATTRIBUTION_HISTORY = 单条查询花了多少计算成本；QUERY_ACCELERATION_HISTORY = 被 QAS 加速过的查询和消耗的 credit；ACCESS_HISTORY = 谁读写了哪些数据（S4-55）
+- ⭐⭐ [QUERY_HISTORY view](https://docs.snowflake.com/en/sql-reference/account-usage/query_history) — 每条查询一行，保留 365 天（Information Schema 的 QUERY_HISTORY 表函数只能查最近 7 天）。和性能有关的列：
+  - 溢出：BYTES_SPILLED_TO_LOCAL_STORAGE / BYTES_SPILLED_TO_REMOTE_STORAGE
+  - 剪枝：PARTITIONS_SCANNED / PARTITIONS_TOTAL
+  - 仓库缓存：PERCENTAGE_SCANNED_FROM_CACHE（0.0～1.0，不是百分数）
+  - 排队：QUEUED_OVERLOAD_TIME（仓库过载）、QUEUED_PROVISIONING_TIME（等仓库创建、恢复或调整大小）
+- ⭐⭐ [QUERY_ATTRIBUTION_HISTORY view](https://docs.snowflake.com/en/sql-reference/account-usage/query_attribution_history) / [Attributing cost](https://docs.snowflake.com/en/user-guide/cost-attributing) — 每条查询在仓库上花了多少 compute credit（C03 新增考点）
+  - **不含**：仓库空闲时间（idle time）、Cloud Services、存储、数据传输、serverless 功能、AI 服务的费用；约 100 ms 以下的短查询不收录
+  - QAS 的花费单独一列（CREDITS_USED_QUERY_ACCELERATION），被加速查询的总成本 = 两列相加
+  - 延迟最长 8 小时；只在 ACCOUNT_USAGE 里有，没有组织级的版本
+  - 按部门 / 项目分摊成本：**object tag** 打在仓库、用户上；同一个应用替多个部门跑查询时，用 **query tag**（QUERY_TAG 会话参数）区分
 - 📝 [Q36](题库.md#q36) ACCOUNT_USAGE 延迟（S4-55 也讲过延迟）
 - 📝 [Q61](题库.md#q61) QUERY_INSIGHTS
 - 📝 [Q65](题库.md#q65) Query Profile 找最耗时操作
 
-- [ ] **71. SQL Tuning**
-- ⭐⭐⭐ Query Profile 的 **Common query problems identified by Query Profile** 一节（在上面 Query History 那一页）— 文档列了 4 个常见问题：
+- [x] **71. SQL Tuning SQL 调优**
+- ⭐⭐⭐ Query Profile 的 **Common query problems identified by Query Profile** 一节（在上面 Query History 那一页）— 考试说明点名的 Exploding joins、Bytes spilled、Inefficient pruning 都在这里：
 
   | 问题 | Query Profile 里的表现 | 对策 |
   |---|---|---|
-  | **Exploding joins** | Join 算子输出的行数比输入多很多（常差几个数量级）。原因：没写 join 条件，变成笛卡尔积（Cartesian product）；或一条记录匹配到另一张表的多条记录 | 补上或改正 join 条件（Q73 / Q90） |
-  | **UNION without ALL** | UNION 会多做一次去重 | 不需要去重时用 UNION ALL |
+  | **Exploding joins** | Join operator 输出的行数比输入多很多（常差几个数量级）。原因：没写 join 条件，变成笛卡尔积（Cartesian product）；或一条记录匹配到另一张表的多条记录 | 补上或改正 join 条件（Q73 / Q90） |
   | **Queries too large to fit in memory** | 内存不够，先溢出到本地磁盘，还不够再溢出到远程存储（更慢） | 加大仓库 / 分小批处理（Q70） |
   | **Inefficient pruning** | TableScan 的 Partitions scanned 接近 Partitions total | 见 75～77 讲 Clustering（Q69） |
 
@@ -749,18 +764,20 @@ Snowflake 从高到低分三层：
 
   | 缓存 | 所在层 | 存什么 | 有效期 / 失效 | 题 |
   |---|---|---|---|---|
-  | **元数据（课程叫 Metadata cache）** | Cloud Services | 表和微分区的元数据（如每列值的范围、不同值的个数） | 一直可用 | `SELECT COUNT(*)` 直接由元数据算出，Query Profile 显示 **Metadata-based Result** 算子，不经过仓库（Q89） |
+  | **元数据（课程和考试说明都叫 Metadata cache）** | Cloud Services | 表和微分区的元数据（如每列值的范围、不同值的个数） | 一直可用 | `SELECT COUNT(*)` 直接由元数据算出，Query Profile 显示 **Metadata-based Result** operator，不经过仓库（Q89） |
   | **Result cache**（Persisted query results） | Cloud Services | 查询结果 | 保留 24 小时；每被复用一次就重新计 24 小时，最长到首次执行后 31 天；基础数据一变就不能再用 | Q87 / Q109 |
   | **Warehouse cache**（本地磁盘缓存） | 计算层（仓库） | 从存储读进来的表数据 | 只给同一个仓库上的查询用；仓库挂起（suspend）就清空 | Q84 / Q111 / Q82 |
 
   - "所在层"是课程的讲法。文档能核到的是：元数据由 Cloud Services 管理；result cache 的复用条件里没有"同一仓库"这一条；仓库缓存只给同一仓库的查询用
-  - "Metadata cache"这个词文档里没有。文档的说法是 Metadata-based Result："A query whose result is computed based purely on metadata, without accessing any data. These queries are not processed by a virtual warehouse."
+  - "Metadata cache"是课程和考试说明（4.3）的叫法，官方文档里没有这个词。文档的说法是 Metadata-based Result："A query whose result is computed based purely on metadata, without accessing any data. These queries are not processed by a virtual warehouse."
 
   **Result cache 复用条件**（文档写明满足了也不保证一定复用）
   - 新查询和之前的**完全一样**：大小写不同、用了表别名都不行
-  - 查询涉及的表数据没有变
-  - 当前角色有需要的权限（所以换个用户也能用，只要角色有权限）
-  - 不含非确定性函数（如 RANDOM、UUID_STRING、RANDSTR）和外部函数，不查 hybrid table
+  - 查询涉及的表数据没有变；表的微分区也没有变（比如因为别的数据变动被重聚簇或合并）
+  - 之前的结果还在（没过期）
+  - 当前角色有需要的权限：SELECT 要对用到的所有表有权限（所以换个用户也能用，只要角色有权限）；SHOW 要求和生成缓存的角色是同一个
+  - 影响结果的配置选项没有变
+  - 不含非确定性函数（如 RANDOM、UUID_STRING、RANDSTR）和外部函数
   - 开关：`USE_CACHED_RESULT` 参数，默认开启，可在账号 / 用户 / 会话级关掉
 
   **Q87 推理**：换了仓库 → 仓库缓存用不上；换了用户但角色有权限 → result cache 能用；元数据始终能用。
@@ -773,7 +790,7 @@ Snowflake 从高到低分三层：
 
 - ⭐⭐⭐ [Using Persisted Query Results](https://docs.snowflake.com/en/user-guide/querying-persisted-results) — 结果缓存：24 小时、最长 31 天、复用条件、USE_CACHED_RESULT
 - ⭐⭐⭐ [Optimizing the warehouse cache](https://docs.snowflake.com/en/user-guide/performance-query-warehouse-cache) — 仓库缓存、挂起清空、AUTO_SUSPEND 建议
-- ⭐⭐ [Monitor query activity with Query History](https://docs.snowflake.com/en/user-guide/ui-snowsight-activity) — 里面 Query Profile 的算子列表有 Metadata-based Result（例子就是 `SELECT COUNT(*)`）
+- ⭐⭐ [Monitor query activity with Query History](https://docs.snowflake.com/en/user-guide/ui-snowsight-activity) — 里面 Query Profile 的 Metadata operators 有 Metadata-based Result（例子就是 `SELECT COUNT(*)`）
 - ⭐ [Warehouse Considerations](https://docs.snowflake.com/en/user-guide/warehouses-considerations) — 缓存那一节（S5-61 已列）
 - 📝 [Q89](题库.md#q89) Metadata Cache（COUNT(*)）
 - 📝 [Q87](题库.md#q87) 三种缓存
@@ -783,16 +800,17 @@ Snowflake 从高到低分三层：
 - 📝 [Q82](题库.md#q82) AUTO_SUSPEND 与仓库缓存（主归属 S5-62，缓存部分在本讲）
 
 - [ ] **73. Caching - Hands-on**（实操；文档同 72 讲）
-  - 动手对比时，可以先 `ALTER SESSION SET USE_CACHED_RESULT = FALSE;` 关掉结果缓存，才看得出仓库缓存的效果
 
 ### 物化视图（74 讲）
 - [ ] **74. Materialized Views**
 - ⭐⭐⭐ [Working with Materialized Views](https://docs.snowflake.com/en/user-guide/views-materialized) — 需 **Enterprise**
   - **特别适合**（Q76 题干的几条就出自这里）：结果的行或列比基表少很多；结果需要大量计算；查询的是外部表；基表不常变
   - **该建 MV 而不是普通视图**：结果不常变 + 经常被用 + 查询很耗资源（三条都满足）
-  - **限制**：只能查一张表，定义里不能 join（包括 self-join）；不能查 hybrid table、dynamic table；不能用 Time Travel 建；聚合函数只支持一部分（如 COUNT、MIN、MAX、SUM、AVG、COUNT_IF），不能嵌套，DISTINCT 不能和聚合函数一起用
+  - **限制**：只能查一张表，定义里不能 join（包括 self-join）；不能查 dynamic table；不能用 Time Travel 建；聚合函数只支持一部分（如 COUNT、MIN、MAX、SUM、AVG、COUNT_IF），不能嵌套，DISTINCT 不能和聚合函数一起用
   - **维护**：Snowflake 在后台自动维护（serverless，按秒计费），所以会有额外费用
-  - 能加速昂贵的聚合、投影、选择操作；优化器会自动改写查询去用 MV
+  - **数据总是最新的**：不管基表有多少 DML，查到的都是最新数据，后台维护没跟上时由 Snowflake 在查询时补上
+  - 能加速昂贵的聚合、投影、选择操作；优化器会自动改写查询去用 MV，SQL 里不用写 MV 的名字
+  - MV 可以有自己的 clustering key（想要多个 cluster key，可以建多个 MV）；MV 也可以是 secure view
 - ⭐⭐ [Decision guide for dynamic tables](https://docs.snowflake.com/en/user-guide/dynamic-tables/decision-guide) — MV、Dynamic Table、Streams + Tasks 怎么选：
 
   | 场景 | Dynamic Table | Streams + Tasks | Materialized View |
@@ -824,21 +842,19 @@ Snowflake 从高到低分三层：
   - **什么时候定义**：表很大（通常是多 TB）、查询比预期慢或越来越慢、clustering depth 很大
   - **怎么选列**：一般最多 3～4 列（或表达式）；按基数从低到高排；基数太低剪枝效果小，基数太高（如 UUID、纳秒级时间戳）也不适合直接用，可以用表达式降低基数
   - **成本**：重聚簇要消耗 credit；旧微分区被标记删除，但会留给 Time Travel 和 Fail-safe，所以存储费也会增加
-  - Hybrid table 不能定义 clustering key
 - ⭐⭐⭐ [Automatic Clustering](https://docs.snowflake.com/en/user-guide/tables-auto-reclustering)
   - 给表定义 clustering key 后就自动开始，不用别的操作
   - **Serverless**：消耗 credit，但不需要你提供仓库
   - 只在重聚簇有好处时才做，不是立刻做
   - 暂停 / 恢复：`ALTER TABLE t1 SUSPEND RECLUSTER;` / `ALTER TABLE t1 RESUME RECLUSTER;`
   - 克隆出来的表，Automatic Clustering 一开始是暂停状态（和 S9 克隆有关）
-  - 文档新内容：2026-09-01 起，新做聚簇的表用 **Optima Clustering**（按导入的未压缩数据量计费），已有的表仍是 Clustering Classic；题库可能还是旧说法
-- ⭐ [Optimizing storage](https://docs.snowflake.com/en/user-guide/performance-query-storage) — 总览页对这一节的说明：帮你在 Automatic Clustering、Search Optimization Service、Materialized View 之间选择
+- ⭐⭐ [Optimizing storage](https://docs.snowflake.com/en/user-guide/performance-query-storage) — 在 Automatic Clustering、Search Optimization Service、Materialized View 之间怎么选，见 78 讲后面的对比表
 - 📝 [Q92](题库.md#q92) Clustering 受益场景
 - 📝 [Q66](题库.md#q66) Automatic Clustering
   - 文档没有"storage performance"这个说法，而且 SOS、MV 也都被归在"存储优化"里。选 Automatic Clustering 的理由：只有它是把表本身的行按 key 物理重新分组（"the rows are physically grouped based on the clustering key"），SOS 和 MV 是另外建的数据结构或对象
 
 - [ ] **77. Clustering & Pruning - Hands-on**
-  - 看一条查询剪枝好不好：Query Profile → TableScan 算子 → Statistics 面板的 **Partitions scanned** 和 **Partitions total**，扫描的比总数少得越多，剪枝越好（Q69）
+  - 看一条查询剪枝好不好：Query Profile → TableScan operator → Statistics 面板的 **Partitions scanned** 和 **Partitions total**，扫描的比总数少得越多，剪枝越好（Q69）
   - Q69 干扰项：`SYSTEM$CLUSTERING_INFORMATION` 看的是整张表的聚簇情况，不是某条查询实际扫了多少分区
 - 📝 [Q69](题库.md#q69) Query Profile 看剪枝（Query Profile 在 70 讲已介绍）
 
@@ -847,12 +863,26 @@ Snowflake 从高到低分三层：
 - ⭐⭐⭐ [Search Optimization Service](https://docs.snowflake.com/en/user-guide/search-optimization-service) — 需 **Enterprise 及以上**
   - **适合**：大表上选择性很强的点查（selective point lookup）；还支持 LIKE / ILIKE / RLIKE 子串和正则、SEARCH / SEARCH_IP 文本搜索、VARIANT / OBJECT / ARRAY 半结构化数据的等值和 IN 等条件、GEOGRAPHY 地理空间函数
   - **Search access path（搜索访问路径）**：SOS 建立并维护的持久数据结构，记录表中各列的值可能出现在哪些微分区里（Q93）。访问路径完全建好之前，查询不会变快
-  - 开启：`ALTER TABLE t ADD SEARCH OPTIMIZATION;`
+  - 开启：可以对整张表开，也可以只对指定列和方法（EQUALITY、SUBSTRING、GEO、FULL_TEXT）开，文档建议一般只对特定列开
+  - 权限：开启要有表的 OWNERSHIP + 所在 schema 的 ADD SEARCH OPTIMIZATION；查询只要 SELECT
   - **成本**：存储（访问路径通常约为原表的 1/4）+ 计算（首次构建，加上数据变动后的维护，维护量大致和新增或修改的数据量成正比），按秒计费
-- ⭐⭐ [Queries that benefit from search optimization](https://docs.snowflake.com/en/user-guide/search-optimization/queries-that-benefit) — 高基数的标准：过滤用到的列里至少有一列约 10 万个不同值以上；不支持 MV、外部表、hybrid table、临时表，不支持 FLOAT、GEOMETRY 类型
+- ⭐⭐ [Queries that benefit from search optimization](https://docs.snowflake.com/en/user-guide/search-optimization/queries-that-benefit) — 高基数的标准：过滤用到的列里至少有一列约 10 万个不同值以上；不支持 MV、外部表、临时表，不支持 FLOAT、GEOMETRY 类型
 - ⭐ [Search optimization cost estimation](https://docs.snowflake.com/en/user-guide/search-optimization/cost-estimation)
 - 📝 [Q72](题库.md#q72) Search Optimization Service（Clustering 不对：基数很高的列不适合直接做 clustering key）
 - 📝 [Q93](题库.md#q93) SOS Search Access Path
+
+**Clustering / SOS / MV 怎么选**（[Optimizing storage for performance](https://docs.snowflake.com/en/user-guide/performance-query-storage)）
+
+| | Automatic Clustering | Search Optimization | Materialized View |
+|---|---|---|---|
+| 适合 | 按 cluster key 列过滤；**范围查询、不等式过滤** | 只返回少量行的**点查**（返回行多就改用 clustering）；子串 / 正则、半结构化字段、地理空间 | 频繁的重计算（聚合、分析半结构化数据）；查外部表 |
+| 做法 | 重排表本身的数据，不另建存储 | 另建 search access path | 另存预先算好的结果 |
+| 额外存储 | 基本没有（只可能多出 Fail-safe 存储） | 有 | 有 |
+| 版本 | **Standard** 就有 | Enterprise+ | Enterprise+ |
+| 个数 | 一张表只能有一个 cluster key | — | 可以建多个 MV，各自有 cluster key |
+
+- 可以在同一张表上组合使用；但给有聚簇的表再加 SOS 或 MV，重聚簇会带动它们的维护，成本会更高
+- 几种都可能有用时，文档建议先从 Automatic Clustering 或 SOS 开始；Automatic Clustering 范围最广，适合很多查询都按同几列过滤、join 或聚合
 
 - [ ] **小测试4: Performance Concepts: Query Optimization Quiz**
 
